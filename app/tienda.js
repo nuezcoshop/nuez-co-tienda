@@ -128,7 +128,7 @@ export default function Tienda({ productos, banners, config, hayError }) {
       </header>
 
       <main className="max-w-5xl mx-auto px-4">
-        <Banners banners={banners} nombre={config.nombre} />
+        <Banners banners={banners} nombre={config.nombre} bienvenida={config.bienvenida} />
 
         {hayError && (
           <p className="my-6 text-center text-sm text-[var(--tinta-suave)]">
@@ -193,7 +193,7 @@ function Chip({ activo, onClick, children }) {
   );
 }
 
-function Banners({ banners, nombre }) {
+function Banners({ banners, nombre, bienvenida }) {
   const contenedor = useRef(null);
   const [actual, setActual] = useState(0);
 
@@ -212,7 +212,7 @@ function Banners({ banners, nombre }) {
     return (
       <div className="mt-4 rounded-2xl bg-[var(--crema-2)] border border-[var(--borde)] px-5 py-6 text-center">
         <p className="titulo text-xl text-[var(--nogal)]">Bienvenido a {nombre}</p>
-        <p className="text-sm text-[var(--tinta-suave)] mt-1">Elegí tus productos y cerrá el pedido por WhatsApp.</p>
+        <p className="text-sm text-[var(--tinta-suave)] mt-1">{bienvenida || "Elegí tus productos y cerrá el pedido por WhatsApp."}</p>
       </div>
     );
   }
