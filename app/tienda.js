@@ -5,7 +5,16 @@ import { armarCatalogo, disponible, formatoCantidad, money, normalizarTexto, pre
 
 const CLAVE_CARRITO = "nuezco_carrito_v1";
 const PASO_KG = 0.05; // se suma/resta de a 50 g
-const ATAJOS_KG = [0.1, 0.25, 0.5, 1];
+const ATAJOS_KG = [0.1, 0.25, 0.5, 1, 2];
+
+// Cada producto al peso puede venderse de a 50 g (libre), 100 g, 250 g, 500 g o 1 kg: lo define el sistema.
+function pasoDe(row) {
+  if (row.unidad !== "kg") return 1;
+  const p = Number(row.paso_venta);
+  return p > 0 ? p : PASO_KG;
+}
+const por100 = (precioKg) => money(precioKg / 10) + " /100 g";
+const textoPaso = (paso) => (paso >= 1 ? "de a 1 kg" : "de a " + formatoCantidad(paso, "kg"));
 
 function redondear(n) {
   return Math.round(n * 1000) / 1000;
@@ -56,6 +65,25 @@ export default function Tienda({ productos, banners, config, fotosCategorias = {
   const [carritoAbierto, setCarritoAbierto] = useState(false);
   const [detalle, setDetalle] = useState(null); // producto abierto
   const [aviso, setAviso] = useState("");
+
+  // Enlaces directos (por ejemplo desde un banner): ?categoria=Granolas, ?buscar=yerba o ?producto=12
+  useEffect(() => {
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      const cat = sp.get("categoria");
+      const bus = sp.get("buscar");
+      const prod = sp.get("producto");
+      if (cat) setCategoria(cat);
+      if (bus) setBusqueda(bus);
+      if (prod) {
+        const it = items.find((i) => String(i.id) === prod || (i.variantes || []).some((v) => String(v.id) === prod));
+        if (it) setDetalle(it);
+      }
+    } catch (e) {
+      // sin parámetros
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Recupera el carrito guardado en este celular (y lo ajusta a lo que hay hoy).
   useEffect(() => {
@@ -398,7 +426,7 @@ function Tarjeta({ item, carrito, abrir }) {
 
   let precioTexto = "";
   if (item.tipo === "variantes") precioTexto = "Desde " + money(Math.min(...item.variantes.map((v) => v.precio_venta)));
-  else if (item.tipo === "peso") precioTexto = money(item.precio_venta) + " /kg";
+  else if (item.tipo === "peso") precioTexto = por100(item.precio_venta);
   else precioTexto = money(item.precio_venta);
 
   return (
@@ -464,22 +492,24 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
   const [opcionId, setOpcionId] = useState(opciones[0]?.id);
   const opcion = porId[opcionId] || item;
   const esPeso = opcion.unidad === "kg";
-  const paso = esPeso ? PASO_KG : 1;
+  const paso = pasoDe(opcion);
   const max = disponible(opcion);
   const yaEnCarrito = carrito[opcion.id] || 0;
-  const inicial = esPeso ? Math.min(0.1, max) : 1;
+  const inicial = esPeso ? Math.min(Math.max(paso, 0.1 - ((0.1 % paso) || 0)), max) : 1;
   const [cant, setCant] = useState(inicial);
 
   function elegirOpcion(id) {
     setOpcionId(id);
-    setCant(porId[id]?.unidad === "kg" ? Math.min(0.1, disponible(porId[id])) : 1);
+    const o = porId[id];
+    setCant(o?.unidad === "kg" ? Math.min(Math.max(pasoDe(o), 0.1 - ((0.1 % pasoDe(o)) || 0)), disponible(o)) : 1);
   }
 
   // El precio por cantidad cuenta lo que ya hay en el carrito + lo que se está agregando.
   const precio = precioPorCantidad(opcion, redondear(yaEnCarrito + cant));
   const subtotal = precio * cant;
   const tramos = [...(opcion.tramos || [])].sort((a, b) => a.desde - b.desde);
-  const unidadPrecio = esPeso ? " /kg" : "";
+  const unidadPrecio = esPeso ? " /100 g" : "";
+  const mostrar = (p) => (esPeso ? money(p / 10) : money(p));
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center" onClick={cerrar}>
@@ -518,18 +548,21 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
           )}
 
           <p className="text-2xl font-extrabold text-[var(--verde)] mt-4">
-            {money(precio)}
+            {mostrar(precio)}
             <span className="text-sm font-semibold text-[var(--tinta-suave)]">{unidadPrecio}</span>
           </p>
           {tramos.length > 0 && (
             <p className="text-xs text-[var(--tinta-suave)] mt-1">
               Llevando más, baja el precio:{" "}
-              {tramos.map((t) => `desde ${formatoCantidad(Number(t.desde), esPeso ? "kg" : "un")} ${money(t.precio)}${unidadPrecio}`).join(" · ")}
+              {tramos.map((t) => `desde ${formatoCantidad(Number(t.desde), esPeso ? "kg" : "un")} ${mostrar(t.precio)}${unidadPrecio}`).join(" · ")}
             </p>
           )}
 
           <div className="mt-4">
-            <p className="text-sm font-semibold mb-2">{esPeso ? "¿Cuánto querés llevar?" : "Cantidad"}</p>
+            <p className="text-sm font-semibold mb-2">
+              {esPeso ? "¿Cuánto querés llevar?" : "Cantidad"}
+              {esPeso && paso > PASO_KG + 1e-9 && <span className="font-normal text-[var(--tinta-suave)]"> · se vende {textoPaso(paso)}</span>}
+            </p>
             <Contador
               etiqueta={esPeso ? formatoCantidad(cant, "kg") : String(cant)}
               onMenos={() => setCant((c) => Math.max(redondear(c - paso), paso))}
@@ -539,7 +572,7 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
             />
             {esPeso && (
               <div className="flex gap-2 mt-2">
-                {ATAJOS_KG.filter((m) => m <= max + 1e-9).map((m) => (
+                {ATAJOS_KG.filter((m) => m <= max + 1e-9 && m >= paso - 1e-9 && Math.abs(m / paso - Math.round(m / paso)) < 1e-6).map((m) => (
                   <button
                     key={m}
                     onClick={() => setCant(m)}
@@ -661,14 +694,13 @@ function Pedido({ lineas, total, config, agregar, quitar, vaciar, cerrar }) {
           {lineas.length === 0 && <p className="py-6 text-center text-[var(--tinta-suave)]">Todavía no agregaste productos.</p>}
           {lineas.map((l) => {
             const esKg = l.row.unidad === "kg";
-            const paso = esKg ? PASO_KG : 1;
+            const paso = pasoDe(l.row);
             return (
               <div key={l.id} className="flex items-center gap-3 py-3 border-b border-[var(--borde)] last:border-0">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold leading-snug">{l.row.nombre}</p>
                   <p className="text-xs text-[var(--tinta-suave)] mt-0.5">
-                    {esKg ? formatoCantidad(l.cantidad, "kg") : `${l.cantidad} un.`} · {money(l.precio)}
-                    {esKg ? " /kg" : " c/u"}
+                    {esKg ? formatoCantidad(l.cantidad, "kg") : `${l.cantidad} un.`} · {esKg ? por100(l.precio) : money(l.precio) + " c/u"}
                   </p>
                 </div>
                 <div className="flex items-center rounded-xl border border-[var(--borde)]">
