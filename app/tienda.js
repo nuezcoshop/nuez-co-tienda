@@ -30,7 +30,7 @@ function IconoLupa() {
   );
 }
 
-export default function Tienda({ productos, banners, config, hayError }) {
+export default function Tienda({ productos, banners, config, fotosCategorias = {}, hayError }) {
   const { items, porId } = useMemo(() => armarCatalogo(productos), [productos]);
   const [carrito, setCarrito] = useState({}); // { productoId: cantidad }
   const [listo, setListo] = useState(false);
@@ -146,7 +146,11 @@ export default function Tienda({ productos, banners, config, hayError }) {
 
       <div className="max-w-5xl mx-auto px-4">
         <div className="flex items-center justify-between py-3">
-          <h1 className="text-2xl font-extrabold text-[var(--verde)] tracking-tight">{config.nombre}</h1>
+          {config.logo ? (
+            <img src={config.logo} alt={config.nombre} className="h-10 w-auto max-w-[200px] object-contain" />
+          ) : (
+            <h1 className="text-2xl font-extrabold text-[var(--verde)] tracking-tight">{config.nombre}</h1>
+          )}
           <button
             onClick={() => setCarritoAbierto(true)}
             className="relative w-11 h-11 rounded-full bg-[var(--verde-claro)] text-[var(--verde)] flex items-center justify-center"
@@ -182,7 +186,7 @@ export default function Tienda({ productos, banners, config, hayError }) {
                 Todos
               </Pastilla>
               {categorias.map((c) => (
-                <Pastilla key={c} activo={categoria === c} onClick={() => setCategoria(c)}>
+                <Pastilla key={c} activo={categoria === c} foto={fotosCategorias[c]} onClick={() => setCategoria(c)}>
                   {c}
                 </Pastilla>
               ))}
@@ -271,7 +275,7 @@ export default function Tienda({ productos, banners, config, hayError }) {
   );
 }
 
-function Pastilla({ activo, onClick, children }) {
+function Pastilla({ activo, onClick, foto, children }) {
   const ref = useRef(null);
   useEffect(() => {
     if (activo && ref.current) ref.current.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
@@ -280,10 +284,11 @@ function Pastilla({ activo, onClick, children }) {
     <button
       ref={ref}
       onClick={onClick}
-      className={`shrink-0 h-9 px-4 rounded-full text-sm font-medium border transition-colors ${
+      className={`shrink-0 h-9 ${foto ? "pl-1 pr-4 flex items-center gap-2" : "px-4"} rounded-full text-sm font-medium border transition-colors ${
         activo ? "bg-[var(--verde)] text-white border-[var(--verde)]" : "bg-white text-[var(--tinta)] border-[var(--borde)]"
       }`}
     >
+      {foto && <img src={foto} alt="" loading="lazy" className="w-7 h-7 rounded-full object-cover bg-[var(--fondo-suave)]" />}
       {children}
     </button>
   );
