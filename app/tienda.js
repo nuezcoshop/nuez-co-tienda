@@ -11,6 +11,23 @@ function redondear(n) {
   return Math.round(n * 1000) / 1000;
 }
 
+// Si pegaron el enlace sin "https://", se lo agregamos para que no se rompa.
+function normalizarEnlace(url) {
+  const u = String(url || "").trim();
+  if (!u) return "#";
+  if (/^(https?:|mailto:|tel:|whatsapp:)/i.test(u) || u.startsWith("/") || u.startsWith("#")) return u;
+  return "https://" + u;
+}
+function esExterno(url) {
+  const u = normalizarEnlace(url);
+  if (!/^https?:/i.test(u)) return false;
+  try {
+    return new URL(u).host !== window.location.host;
+  } catch (e) {
+    return true;
+  }
+}
+
 function IconoCarrito({ className = "w-6 h-6" }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -117,24 +134,31 @@ export default function Tienda({ productos, banners, config, fotosCategorias = {
     return [...set].sort((a, b) => a.localeCompare(b));
   }, [items]);
 
-  const q = normalizarTexto(busqueda);
+  const q = normalizarTexto(busqueda).trim();
+  const palabras = q ? q.split(/\s+/) : [];
   const visibles = items
-    .filter((i) => (!categoria || i.categoria === categoria) && (!q || normalizarTexto(i.nombre).includes(q)))
+    .filter((i) => {
+      if (categoria && i.categoria !== categoria) return false;
+      if (palabras.length === 0) return true;
+      const texto = normalizarTexto(i.nombre + " " + (i.categoria || ""));
+      return palabras.every((w) => texto.includes(w));
+    })
     .sort((a, b) => Number(b.hayStock) - Number(a.hayStock) || a.nombre.localeCompare(b.nombre));
 
   // Sin filtro ni búsqueda, los productos se muestran agrupados por categoría.
-  const grupos = useMemo(() => {
-    if (categoria || q) return [{ titulo: q ? "Resultados" : categoria, items: visibles }];
+  let grupos;
+  if (categoria || q) {
+    grupos = [{ titulo: q ? "Resultados" : categoria, items: visibles }];
+  } else {
     const mapa = {};
     visibles.forEach((i) => {
       const k = i.categoria || "Otros";
       (mapa[k] = mapa[k] || []).push(i);
     });
-    return Object.entries(mapa)
+    grupos = Object.entries(mapa)
       .sort(([a], [b]) => (a === "Otros" ? 1 : b === "Otros" ? -1 : a.localeCompare(b)))
       .map(([titulo, its]) => ({ titulo, items: its }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoria, q, items]);
+  }
 
   return (
     <div className="min-h-screen pb-28 bg-white">
@@ -173,7 +197,10 @@ export default function Tienda({ productos, banners, config, fotosCategorias = {
               <IconoLupa />
             </span>
             <input
-              type="search"
+              type="text"
+              inputMode="search"
+              enterKeyHint="search"
+              autoComplete="off"
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
               placeholder="Buscar productos…"
@@ -196,7 +223,7 @@ export default function Tienda({ productos, banners, config, fotosCategorias = {
       </div>
 
       <main className="max-w-5xl mx-auto px-4">
-        <Banners banners={banners} nombre={config.nombre} bienvenida={config.bienvenida} />
+        {!q && !categoria && <Banners banners={banners} nombre={config.nombre} bienvenida={config.bienvenida} />}
 
         {hayError && (
           <p className="my-6 text-center text-sm text-[var(--tinta-suave)]">
@@ -338,7 +365,12 @@ function Banners({ banners, nombre, bienvenida }) {
           return (
             <div key={b.id} className="snap-center shrink-0 w-full aspect-[12/5] bg-[var(--fondo-suave)]">
               {b.enlace ? (
-                <a href={b.enlace} className="block w-full h-full">
+                <a
+                  href={normalizarEnlace(b.enlace)}
+                  target={esExterno(b.enlace) ? "_blank" : undefined}
+                  rel={esExterno(b.enlace) ? "noopener noreferrer" : undefined}
+                  className="block w-full h-full"
+                >
                   {imagen}
                 </a>
               ) : (
@@ -547,6 +579,7 @@ function Pedido({ lineas, total, config, agregar, quitar, vaciar, cerrar }) {
   const [pago, setPago] = useState("Efectivo");
   const [notas, setNotas] = useState("");
   const [error, setError] = useState("");
+  const [confirmandoVaciar, setConfirmandoVaciar] = useState(false);
 
   // Los datos del cliente se recuerdan en este celular para la próxima compra.
   useEffect(() => {
@@ -655,9 +688,29 @@ function Pedido({ lineas, total, config, agregar, quitar, vaciar, cerrar }) {
             );
           })}
           {lineas.length > 0 && (
-            <button onClick={() => confirm("¿Vaciar el pedido?") && vaciar()} className="text-xs text-[var(--tinta-suave)] underline mt-2">
-              Vaciar pedido
-            </button>
+            confirmandoVaciar ? (
+              <div className="mt-3 rounded-2xl bg-[var(--fondo-suave)] p-4">
+                <p className="text-sm font-semibold mb-3">¿Vaciar todo el pedido?</p>
+                <div className="flex gap-2">
+                  <button onClick={() => setConfirmandoVaciar(false)} className="flex-1 h-11 rounded-xl border border-[var(--borde)] bg-white text-sm font-semibold">
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={() => {
+                      setConfirmandoVaciar(false);
+                      vaciar();
+                    }}
+                    className="flex-1 h-11 rounded-xl bg-[var(--verde)] text-white text-sm font-semibold"
+                  >
+                    Sí, vaciar
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button onClick={() => setConfirmandoVaciar(true)} className="text-xs text-[var(--tinta-suave)] underline mt-2">
+                Vaciar pedido
+              </button>
+            )
           )}
         </div>
 
