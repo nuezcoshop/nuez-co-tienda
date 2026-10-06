@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --crema: #faf6ef;
+  --crema-2: #f1e9db;
+  --tinta: #2b2118;
+  --tinta-suave: #7a6a5a;
+  --nogal: #7a4b24;
+  --nogal-oscuro: #5d3818;
+  --musgo: #3f5a3a;
+  --borde: #e5dac8;
+}
+
+html,
+body {
+  background: var(--crema);
+  color: var(--tinta);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.titulo {
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+}
+
+.sin-barra {
+  scrollbar-width: none;
+}
+.sin-barra::-webkit-scrollbar {
+  display: none;
+}

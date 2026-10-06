@@ -1,0 +1,10 @@
+NUEZ CO - TIENDA ONLINE (ETAPA 1)
+=================================
+Catalogo + carrito + pedido por WhatsApp. Lee productos y stock del sistema POS.
+En esta etapa NO guarda pedidos: arma el mensaje y abre WhatsApp.
+
+Pasos (los detalla el chat):
+1) Supabase > SQL Editor: pegar y ejecutar tienda_etapa1.sql
+2) Crear un repositorio nuevo en GitHub (ej: nuez-co-tienda) y subir TODO el contenido de esta carpeta
+3) Vercel > Add New > Project > importar ese repositorio
+4) Cargar las variables de entorno (ver .env.example) y desplegar
