@@ -36,6 +36,11 @@ export default async function Page() {
         : Number(process.env.NEXT_PUBLIC_ENVIO_GRATIS_DESDE) || 0,
     bienvenida: c.bienvenida || "",
     logo: c.logo_url || "",
+    sucursal:
+      c.sucursal_lat !== null && c.sucursal_lat !== undefined && c.sucursal_lng !== null && c.sucursal_lng !== undefined
+        ? { lat: Number(c.sucursal_lat), lng: Number(c.sucursal_lng) }
+        : null,
+    zonasEnvio: Array.isArray(c.zonas_envio) ? c.zonas_envio : [],
   };
 
   // Color principal elegido en el sistema (si no hay, queda el verde de siempre).

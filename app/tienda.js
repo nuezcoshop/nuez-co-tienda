@@ -1,7 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
+import { costoEnvio, enlaceMapa } from "@/lib/envio";
 import { armarCatalogo, disponible, formatoCantidad, money, normalizarTexto, precioPorCantidad } from "@/lib/catalogo";
+
+// El mapa se descarga recién cuando el cliente elige envío a domicilio: no pesa en la carga normal.
+const MapaEnvio = dynamic(() => import("./mapa-envio"), {
+  ssr: false,
+  loading: () => <div className="fixed inset-0 z-[60] bg-white/80 flex items-center justify-center text-sm font-semibold">Cargando mapa…</div>,
+});
 
 const CLAVE_CARRITO = "nuezco_carrito_v1";
 const PASO_KG = 0.05; // se suma/resta de a 50 g
@@ -613,6 +621,8 @@ function Pedido({ lineas, total, config, agregar, quitar, vaciar, cerrar }) {
   const [notas, setNotas] = useState("");
   const [error, setError] = useState("");
   const [confirmandoVaciar, setConfirmandoVaciar] = useState(false);
+  const [punto, setPunto] = useState(null); // ubicación marcada en el mapa
+  const [mapaAbierto, setMapaAbierto] = useState(false);
 
   // Los datos del cliente se recuerdan en este celular para la próxima compra.
   useEffect(() => {
@@ -620,6 +630,7 @@ function Pedido({ lineas, total, config, agregar, quitar, vaciar, cerrar }) {
       const d = JSON.parse(window.localStorage.getItem("nuezco_cliente_v1") || "{}");
       if (d.nombre) setNombre(d.nombre);
       if (d.direccion) setDireccion(d.direccion);
+      if (d.punto && typeof d.punto.lat === "number" && typeof d.punto.lng === "number") setPunto(d.punto);
     } catch (e) {
       // sin datos guardados
     }
@@ -629,15 +640,21 @@ function Pedido({ lineas, total, config, agregar, quitar, vaciar, cerrar }) {
   const faltaParaGratis = config.envioGratisDesde > 0 ? Math.max(config.envioGratisDesde - total, 0) : 0;
   const progreso = config.envioGratisDesde > 0 ? Math.min(total / config.envioGratisDesde, 1) : 0;
 
+  const hayMapa = !!config.sucursal;
+  const calculo = entrega === "envio" ? costoEnvio(config.zonasEnvio, config.sucursal, punto) : null;
+  const costoFinal = entrega === "envio" && !gratis && calculo && !calculo.fuera ? calculo.precio : 0;
+  const totalFinal = total + costoFinal;
+
   function enviar() {
     setError("");
     if (lineas.length === 0) return setError("Tu pedido está vacío.");
     if (!nombre.trim()) return setError("Escribí tu nombre.");
     if (entrega === "envio" && !direccion.trim()) return setError("Escribí la dirección de entrega.");
+    if (entrega === "envio" && hayMapa && !punto) return setError("Marcá tu ubicación en el mapa para calcular el envío.");
     if (!config.whatsapp) return setError("La tienda todavía no tiene un WhatsApp configurado.");
 
     try {
-      window.localStorage.setItem("nuezco_cliente_v1", JSON.stringify({ nombre: nombre.trim(), direccion: direccion.trim() }));
+      window.localStorage.setItem("nuezco_cliente_v1", JSON.stringify({ nombre: nombre.trim(), direccion: direccion.trim(), punto }));
     } catch (e) {
       // no es importante
     }
@@ -649,7 +666,12 @@ function Pedido({ lineas, total, config, agregar, quitar, vaciar, cerrar }) {
 
     let lineaEntrega = "Entrega: Retiro en sucursal";
     if (entrega === "envio") {
-      lineaEntrega = `Entrega: Envío a domicilio (${direccion.trim()}) — ${gratis ? "envío gratis" : "costo a coordinar con la cadetería"}`;
+      let costoTexto = "costo a coordinar con la cadetería";
+      if (gratis) costoTexto = "envío gratis";
+      else if (calculo && !calculo.fuera) costoTexto = `envío ${money(calculo.precio)}`;
+      else if (calculo && calculo.fuera) costoTexto = "fuera de la zona de envío, a coordinar";
+      lineaEntrega = `Entrega: Envío a domicilio (${direccion.trim()}) — ${costoTexto}`;
+      if (punto) lineaEntrega += `\nUbicación: ${enlaceMapa(punto)}`;
     }
 
     const texto = [
@@ -659,6 +681,7 @@ function Pedido({ lineas, total, config, agregar, quitar, vaciar, cerrar }) {
       "",
       `Total de productos: ${money(total)}`,
       lineaEntrega,
+      costoFinal > 0 ? `Total con envío: ${money(totalFinal)}` : null,
       `Medio de pago: ${pago}`,
       `Nombre: ${nombre.trim()}`,
       notas.trim() ? `Notas: ${notas.trim()}` : null,
@@ -772,8 +795,22 @@ function Pedido({ lineas, total, config, agregar, quitar, vaciar, cerrar }) {
                   placeholder="Dirección de entrega"
                   className="w-full h-12 px-4 rounded-xl border border-[var(--borde)] bg-white outline-none focus:border-[var(--verde)] text-base"
                 />
-                <p className={`text-xs mt-1.5 ${gratis ? "text-[var(--verde)] font-semibold" : "text-[var(--tinta-suave)]"}`}>
-                  {gratis ? "¡Tu envío es gratis!" : "Costo de envío a coordinar con la cadetería."}
+                {hayMapa && (
+                  <button
+                    onClick={() => setMapaAbierto(true)}
+                    className={`mt-2 w-full h-12 rounded-xl border text-sm font-semibold ${punto ? "border-[var(--verde)] bg-[var(--verde-claro)] text-[var(--verde)]" : "border-[var(--borde)] bg-white"}`}
+                  >
+                    {punto ? "📍 Ubicación marcada · Cambiar" : "📍 Marcar mi ubicación en el mapa"}
+                  </button>
+                )}
+                <p className={`text-xs mt-1.5 ${gratis || (calculo && !calculo.fuera) ? "text-[var(--verde)] font-semibold" : "text-[var(--tinta-suave)]"}`}>
+                  {gratis
+                    ? "¡Tu envío es gratis!"
+                    : calculo && !calculo.fuera
+                    ? `Envío a ${calculo.km.toFixed(1).replace(".", ",")} km: ${money(calculo.precio)}`
+                    : calculo && calculo.fuera
+                    ? "Tu ubicación queda fuera de nuestra zona de envío. Enviá el pedido y lo coordinamos por WhatsApp."
+                    : "Costo de envío a coordinar con la cadetería."}
                 </p>
               </div>
             )}
@@ -804,6 +841,30 @@ function Pedido({ lineas, total, config, agregar, quitar, vaciar, cerrar }) {
               <span className="text-sm text-[var(--tinta-suave)]">Total de productos</span>
               <span className="text-xl font-extrabold">{money(total)}</span>
             </div>
+            {costoFinal > 0 && (
+              <>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm text-[var(--tinta-suave)]">Envío</span>
+                  <span className="font-bold">{money(costoFinal)}</span>
+                </div>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-semibold">Total con envío</span>
+                  <span className="text-xl font-extrabold text-[var(--verde)]">{money(totalFinal)}</span>
+                </div>
+              </>
+            )}
+            {mapaAbierto && (
+              <MapaEnvio
+                sucursal={config.sucursal}
+                zonas={config.zonasEnvio}
+                inicial={punto}
+                onCerrar={() => setMapaAbierto(false)}
+                onConfirmar={(p) => {
+                  setPunto(p);
+                  setMapaAbierto(false);
+                }}
+              />
+            )}
             {error && <p className="text-sm text-red-700 mb-2">{error}</p>}
             <button onClick={enviar} className="w-full h-14 rounded-2xl bg-[#1fa855] hover:bg-[#188c46] text-white font-bold text-base active:scale-[0.99]">
               Enviar pedido por WhatsApp
