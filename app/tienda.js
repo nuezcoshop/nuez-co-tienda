@@ -251,7 +251,7 @@ export default function Tienda({ productos, banners, config, fotosCategorias = {
       </div>
 
       <main className="max-w-5xl mx-auto px-4">
-        {!q && !categoria && <Banners banners={banners} nombre={config.nombre} bienvenida={config.bienvenida} />}
+        <Banners banners={banners} nombre={config.nombre} bienvenida={config.bienvenida} />
 
         {hayError && (
           <p className="my-6 text-center text-sm text-[var(--tinta-suave)]">
