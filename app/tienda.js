@@ -626,6 +626,7 @@ function Pedido({ lineas, total, config, agregar, quitar, vaciar, cerrar }) {
   const [mapaAbierto, setMapaAbierto] = useState(false);
   const [telefono, setTelefono] = useState("");
   const [enviando, setEnviando] = useState(false);
+  const [pedidoEnviado, setPedidoEnviado] = useState(null);
 
   // Los datos del cliente se recuerdan en este celular para la próxima compra.
   useEffect(() => {
@@ -731,7 +732,34 @@ function Pedido({ lineas, total, config, agregar, quitar, vaciar, cerrar }) {
       .filter((x) => x !== null)
       .join("\n");
 
-    window.location.href = `https://wa.me/${config.whatsapp}?text=${encodeURIComponent(texto)}`;
+    const urlWhatsApp = `https://wa.me/${config.whatsapp}?text=${encodeURIComponent(texto)}`;
+    // Pedido enviado: se vacía el carrito y se muestra la confirmación, para que nadie lo repita por error.
+    setPedidoEnviado({ numero: numeroPedido, url: urlWhatsApp });
+    vaciar();
+    setTimeout(() => {
+      window.location.href = urlWhatsApp;
+    }, 600);
+  }
+
+  if (pedidoEnviado) {
+    return (
+      <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center">
+        <div className="bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl px-6 py-10 text-center">
+          <div className="mx-auto w-16 h-16 rounded-full bg-[var(--verde-claro)] text-[var(--verde)] flex items-center justify-center text-3xl mb-4">✓</div>
+          <h2 className="text-2xl font-extrabold text-[var(--verde)]">¡Pedido enviado!</h2>
+          {pedidoEnviado.numero && <p className="text-sm font-semibold mt-1">Pedido #{pedidoEnviado.numero}</p>}
+          <p className="text-sm text-[var(--tinta-suave)] mt-3">
+            Recibimos tu pedido. Te confirmamos por WhatsApp el stock, el total y la entrega. ¡Gracias por elegirnos!
+          </p>
+          <a href={pedidoEnviado.url} className="mt-5 block w-full h-12 leading-[3rem] rounded-xl border border-[var(--borde)] text-sm font-semibold">
+            Si no se abrió WhatsApp, tocá acá
+          </a>
+          <button onClick={cerrar} className="mt-3 w-full h-14 rounded-2xl bg-[var(--verde)] text-white font-bold">
+            Seguir comprando
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
