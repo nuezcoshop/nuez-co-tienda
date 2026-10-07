@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { costoEnvio, enlaceMapa } from "@/lib/envio";
+import { supabase } from "@/lib/supabase";
 import { armarCatalogo, disponible, formatoCantidad, money, normalizarTexto, precioPorCantidad } from "@/lib/catalogo";
 
 // El mapa se descarga recién cuando el cliente elige envío a domicilio: no pesa en la carga normal.
@@ -623,6 +624,8 @@ function Pedido({ lineas, total, config, agregar, quitar, vaciar, cerrar }) {
   const [confirmandoVaciar, setConfirmandoVaciar] = useState(false);
   const [punto, setPunto] = useState(null); // ubicación marcada en el mapa
   const [mapaAbierto, setMapaAbierto] = useState(false);
+  const [telefono, setTelefono] = useState("");
+  const [enviando, setEnviando] = useState(false);
 
   // Los datos del cliente se recuerdan en este celular para la próxima compra.
   useEffect(() => {
@@ -630,6 +633,7 @@ function Pedido({ lineas, total, config, agregar, quitar, vaciar, cerrar }) {
       const d = JSON.parse(window.localStorage.getItem("nuezco_cliente_v1") || "{}");
       if (d.nombre) setNombre(d.nombre);
       if (d.direccion) setDireccion(d.direccion);
+      if (d.telefono) setTelefono(d.telefono);
       if (d.punto && typeof d.punto.lat === "number" && typeof d.punto.lng === "number") setPunto(d.punto);
     } catch (e) {
       // sin datos guardados
@@ -645,16 +649,18 @@ function Pedido({ lineas, total, config, agregar, quitar, vaciar, cerrar }) {
   const costoFinal = entrega === "envio" && !gratis && calculo && !calculo.fuera ? calculo.precio : 0;
   const totalFinal = total + costoFinal;
 
-  function enviar() {
+  async function enviar() {
+    if (enviando) return;
     setError("");
     if (lineas.length === 0) return setError("Tu pedido está vacío.");
     if (!nombre.trim()) return setError("Escribí tu nombre.");
+    if (telefono.replace(/\D/g, "").length < 8) return setError("Escribí tu número de WhatsApp para poder avisarte.");
     if (entrega === "envio" && !direccion.trim()) return setError("Escribí la dirección de entrega.");
     if (entrega === "envio" && hayMapa && !punto) return setError("Marcá tu ubicación en el mapa para calcular el envío.");
     if (!config.whatsapp) return setError("La tienda todavía no tiene un WhatsApp configurado.");
 
     try {
-      window.localStorage.setItem("nuezco_cliente_v1", JSON.stringify({ nombre: nombre.trim(), direccion: direccion.trim(), punto }));
+      window.localStorage.setItem("nuezco_cliente_v1", JSON.stringify({ nombre: nombre.trim(), telefono: telefono.trim(), direccion: direccion.trim(), punto }));
     } catch (e) {
       // no es importante
     }
@@ -674,8 +680,43 @@ function Pedido({ lineas, total, config, agregar, quitar, vaciar, cerrar }) {
       if (punto) lineaEntrega += `\nUbicación: ${enlaceMapa(punto)}`;
     }
 
+    // Guardamos el pedido en el sistema de la tienda. Si falla (sin señal, etc.), igual seguimos por WhatsApp.
+    setEnviando(true);
+    let numeroPedido = null;
+    try {
+      const guardar = supabase.rpc("crear_pedido_online", {
+        p: {
+          nombre: nombre.trim(),
+          telefono: telefono.trim(),
+          entrega,
+          direccion: entrega === "envio" ? direccion.trim() : "",
+          lat: entrega === "envio" && punto ? punto.lat : null,
+          lng: entrega === "envio" && punto ? punto.lng : null,
+          costo_envio: costoFinal,
+          envio_gratis: entrega === "envio" && gratis,
+          fuera_de_zona: !!(calculo && calculo.fuera),
+          medio_pago: pago,
+          notas: notas.trim(),
+          total_productos: total,
+          items: lineas.map((l) => ({
+            producto_id: l.id,
+            nombre: l.row.nombre,
+            unidad: l.row.unidad,
+            cantidad: l.cantidad,
+            precio_unitario: l.precio,
+            subtotal: l.subtotal,
+          })),
+        },
+      });
+      const { data, error: errPedido } = await Promise.race([guardar, new Promise((res) => setTimeout(() => res({ data: null, error: "tiempo" }), 6000))]);
+      if (!errPedido && data) numeroPedido = data;
+    } catch (e) {
+      // seguimos sin número de pedido
+    }
+    setEnviando(false);
+
     const texto = [
-      `Hola ${config.nombre}! Quiero hacer este pedido:`,
+      `Hola ${config.nombre}! Quiero hacer este pedido${numeroPedido ? ` (Pedido #${numeroPedido})` : ""}:`,
       "",
       ...detalle,
       "",
@@ -684,6 +725,7 @@ function Pedido({ lineas, total, config, agregar, quitar, vaciar, cerrar }) {
       costoFinal > 0 ? `Total con envío: ${money(totalFinal)}` : null,
       `Medio de pago: ${pago}`,
       `Nombre: ${nombre.trim()}`,
+      `Teléfono: ${telefono.trim()}`,
       notas.trim() ? `Notas: ${notas.trim()}` : null,
     ]
       .filter((x) => x !== null)
@@ -821,6 +863,13 @@ function Pedido({ lineas, total, config, agregar, quitar, vaciar, cerrar }) {
               placeholder="Tu nombre"
               className="w-full h-12 px-4 rounded-xl border border-[var(--borde)] bg-white outline-none focus:border-[var(--verde)] text-base mb-2"
             />
+            <input
+              value={telefono}
+              onChange={(e) => setTelefono(e.target.value)}
+              placeholder="Tu WhatsApp (ej: 3584123456)"
+              inputMode="tel"
+              className="w-full h-12 px-4 rounded-xl border border-[var(--borde)] bg-white outline-none focus:border-[var(--verde)] text-base mb-2"
+            />
             <select
               value={pago}
               onChange={(e) => setPago(e.target.value)}
@@ -866,8 +915,8 @@ function Pedido({ lineas, total, config, agregar, quitar, vaciar, cerrar }) {
               />
             )}
             {error && <p className="text-sm text-red-700 mb-2">{error}</p>}
-            <button onClick={enviar} className="w-full h-14 rounded-2xl bg-[#1fa855] hover:bg-[#188c46] text-white font-bold text-base active:scale-[0.99]">
-              Enviar pedido por WhatsApp
+            <button onClick={enviar} disabled={enviando} className="w-full h-14 rounded-2xl bg-[#1fa855] hover:bg-[#188c46] disabled:opacity-60 text-white font-bold text-base active:scale-[0.99]">
+              {enviando ? "Enviando..." : "Enviar pedido por WhatsApp"}
             </button>
             <p className="text-xs text-center text-[var(--tinta-suave)] mt-2">Se abre WhatsApp con tu pedido listo para enviar. Confirmamos stock y total por ahí.</p>
           </div>
