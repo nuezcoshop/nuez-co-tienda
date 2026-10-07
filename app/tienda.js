@@ -12,6 +12,7 @@ const MapaEnvio = dynamic(() => import("./mapa-envio"), {
   loading: () => <div className="fixed inset-0 z-[60] bg-white/80 flex items-center justify-center text-sm font-semibold">Cargando mapa…</div>,
 });
 
+const TODOS = "__todos";
 const CLAVE_CARRITO = "nuezco_carrito_v1";
 const PASO_KG = 0.05; // se suma/resta de a 50 g
 const ATAJOS_KG = [0.1, 0.25, 0.5, 1, 2];
@@ -65,7 +66,7 @@ function IconoLupa() {
   );
 }
 
-export default function Tienda({ productos, banners, config, fotosCategorias = {}, hayError }) {
+export default function Tienda({ productos, banners, destacados = [], config, fotosCategorias = {}, hayError }) {
   const { items, porId } = useMemo(() => armarCatalogo(productos), [productos]);
   const [carrito, setCarrito] = useState({}); // { productoId: cantidad }
   const [listo, setListo] = useState(false);
@@ -175,17 +176,48 @@ export default function Tienda({ productos, banners, config, fotosCategorias = {
   const palabras = q ? q.split(/\s+/) : [];
   const visibles = items
     .filter((i) => {
-      if (categoria && i.categoria !== categoria) return false;
+      if (categoria && categoria !== TODOS && i.categoria !== categoria) return false;
       if (palabras.length === 0) return true;
       const texto = normalizarTexto(i.nombre + " " + (i.categoria || ""));
       return palabras.every((w) => texto.includes(w));
     })
     .sort((a, b) => Number(b.hayStock) - Number(a.hayStock) || a.nombre.localeCompare(b.nombre));
 
-  // Sin filtro ni búsqueda, los productos se muestran agrupados por categoría.
+  // "Inicio" = sin categoría elegida ni búsqueda. "Todos" muestra el catálogo completo agrupado por categoría.
+  const esInicio = !categoria && !q;
+  const bannersPrincipal = (banners || []).filter((b) => (b.zona || "principal") === "principal");
+  const bannersInicio = (banners || []).filter((b) => b.zona === "inicio");
+  const productosDestacados = useMemo(() => {
+    const vistos = new Set();
+    const lista = [];
+    destacados.forEach((id) => {
+      const it = items.find((i) => String(i.id) === id || (i.variantes || []).some((v) => String(v.id) === id));
+      if (it && it.hayStock && !vistos.has(it.id)) {
+        vistos.add(it.id);
+        lista.push(it);
+      }
+    });
+    return lista;
+  }, [destacados, items]);
+  const enlaceUbicacion =
+    config.ubicacionLink ||
+    (config.sucursal
+      ? `https://www.google.com/maps?q=${config.sucursal.lat},${config.sucursal.lng}`
+      : config.direccion
+      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(config.direccion)}`
+      : "");
+
+  function irAInicio() {
+    setCategoria("");
+    setBusqueda("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   let grupos;
-  if (categoria || q) {
-    grupos = [{ titulo: q ? "Resultados" : categoria, items: visibles }];
+  if (categoria && categoria !== TODOS) {
+    grupos = [{ titulo: categoria, items: visibles }];
+  } else if (q) {
+    grupos = [{ titulo: "Resultados", items: visibles }];
   } else {
     const mapa = {};
     visibles.forEach((i) => {
@@ -207,11 +239,13 @@ export default function Tienda({ productos, banners, config, fotosCategorias = {
 
       <div className="max-w-5xl mx-auto px-4">
         <div className="flex items-center justify-between py-3">
-          {config.logo ? (
-            <img src={config.logo} alt={config.nombre} className="h-10 w-auto max-w-[200px] object-contain" />
-          ) : (
-            <h1 className="text-2xl font-extrabold text-[var(--verde)] tracking-tight">{config.nombre}</h1>
-          )}
+          <button onClick={irAInicio} aria-label="Ir al inicio" className="text-left">
+            {config.logo ? (
+              <img src={config.logo} alt={config.nombre} className="h-10 w-auto max-w-[200px] object-contain" />
+            ) : (
+              <h1 className="text-2xl font-extrabold text-[var(--verde)] tracking-tight">{config.nombre}</h1>
+            )}
+          </button>
           <button
             onClick={() => setCarritoAbierto(true)}
             className="relative w-11 h-11 rounded-full bg-[var(--verde-claro)] text-[var(--verde)] flex items-center justify-center"
@@ -244,23 +278,55 @@ export default function Tienda({ productos, banners, config, fotosCategorias = {
               className="w-full h-11 pl-11 pr-4 rounded-full bg-[var(--fondo-suave)] outline-none focus:ring-2 focus:ring-[var(--verde)]/30 text-base"
             />
           </div>
-          {categorias.length > 0 && (
-            <div className="flex gap-2 overflow-x-auto sin-barra mt-2 -mx-4 px-4 pb-1">
-              <Pastilla activo={categoria === ""} onClick={() => setCategoria("")}>
-                Todos
-              </Pastilla>
-              {categorias.map((c) => (
-                <Pastilla key={c} activo={categoria === c} foto={fotosCategorias[c]} onClick={() => setCategoria(c)}>
-                  {c}
-                </Pastilla>
-              ))}
-            </div>
-          )}
         </div>
       </div>
 
       <main className="max-w-5xl mx-auto px-4">
-        <Banners banners={banners} nombre={config.nombre} bienvenida={config.bienvenida} />
+        {categorias.length > 0 && (
+          <div className="flex gap-3 overflow-x-auto sin-barra mt-3 -mx-4 px-4 pb-1">
+            <CirculoCategoria nombre="Todos" activo={categoria === TODOS} onClick={() => setCategoria(TODOS)} todos />
+            {categorias.map((c) => (
+              <CirculoCategoria key={c} nombre={c} foto={fotosCategorias[c]} activo={categoria === c} onClick={() => setCategoria(c)} />
+            ))}
+          </div>
+        )}
+
+        {(bannersPrincipal.length > 0 || esInicio) && (
+          <Banners banners={bannersPrincipal} nombre={config.nombre} bienvenida={config.bienvenida} />
+        )}
+
+        {esInicio && productosDestacados.length > 0 && (
+          <section className="mt-6">
+            <h2 className="text-lg font-bold text-[var(--verde)] mb-3">{config.destacadosTitulo}</h2>
+            <div className="flex gap-3 overflow-x-auto sin-barra snap-x -mx-4 px-4 pb-2">
+              {productosDestacados.map((item) => (
+                <div key={item.id} className="w-40 shrink-0 snap-start flex">
+                  <Tarjeta item={item} carrito={carrito} abrir={() => setDetalle(item)} />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {esInicio && bannersInicio.length > 0 && <Banners banners={bannersInicio} sinBienvenida />}
+
+        {esInicio && (config.direccion || config.horario || enlaceUbicacion) && (
+          <section className="mt-6 rounded-2xl bg-[var(--fondo-suave)] p-5">
+            <h2 className="text-lg font-bold text-[var(--verde)] mb-2">Visitanos</h2>
+            {config.direccion && <p className="text-sm font-semibold">{config.direccion}</p>}
+            {config.horario && <p className="text-sm text-[var(--tinta-suave)] mt-1">{config.horario}</p>}
+            {enlaceUbicacion && (
+              <a
+                href={enlaceUbicacion}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 inline-flex items-center h-11 px-5 rounded-full bg-[var(--verde)] text-white text-sm font-semibold"
+              >
+                📍 Cómo llegar
+              </a>
+            )}
+          </section>
+        )}
 
         {hayError && (
           <p className="my-6 text-center text-sm text-[var(--tinta-suave)]">
@@ -268,7 +334,7 @@ export default function Tienda({ productos, banners, config, fotosCategorias = {
           </p>
         )}
 
-        {grupos.map((g) =>
+        {!esInicio && grupos.map((g) =>
           g.items.length === 0 ? null : (
             <section key={g.titulo} className="mt-6">
               <h2 className="text-lg font-bold text-[var(--verde)] mb-3">{g.titulo}</h2>
@@ -280,14 +346,17 @@ export default function Tienda({ productos, banners, config, fotosCategorias = {
             </section>
           )
         )}
-        {!hayError && visibles.length === 0 && (
+        {!hayError && !esInicio && visibles.length === 0 && (
           <p className="my-10 text-center text-[var(--tinta-suave)]">No encontramos productos con esa búsqueda.</p>
         )}
 
-        <footer className="mt-12 mb-4 text-center text-xs text-[var(--tinta-suave)] space-y-1">
-          {config.direccion && <p>Retiro en sucursal: {config.direccion}</p>}
-          {config.horario && <p>{config.horario}</p>}
-        </footer>
+        {!esInicio && (
+          <footer className="mt-12 mb-4 text-center text-xs text-[var(--tinta-suave)] space-y-1">
+            {config.direccion && <p>Retiro en sucursal: {config.direccion}</p>}
+            {config.horario && <p>{config.horario}</p>}
+          </footer>
+        )}
+        {esInicio && <div className="h-6" />}
       </main>
 
       {cantidadLineas > 0 && !carritoAbierto && !detalle && (
@@ -339,26 +408,26 @@ export default function Tienda({ productos, banners, config, fotosCategorias = {
   );
 }
 
-function Pastilla({ activo, onClick, foto, children }) {
+function CirculoCategoria({ nombre, foto, activo, onClick, todos }) {
   const ref = useRef(null);
   useEffect(() => {
     if (activo && ref.current) ref.current.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
   }, [activo]);
   return (
-    <button
-      ref={ref}
-      onClick={onClick}
-      className={`shrink-0 h-9 ${foto ? "pl-1 pr-4 flex items-center gap-2" : "px-4"} rounded-full text-sm font-medium border transition-colors ${
-        activo ? "bg-[var(--verde)] text-white border-[var(--verde)]" : "bg-white text-[var(--tinta)] border-[var(--borde)]"
-      }`}
-    >
-      {foto && <img src={foto} alt="" loading="lazy" className="w-7 h-7 rounded-full object-cover bg-[var(--fondo-suave)]" />}
-      {children}
+    <button ref={ref} onClick={onClick} className="shrink-0 w-[72px] flex flex-col items-center gap-1.5">
+      <span
+        className={`w-16 h-16 rounded-full overflow-hidden flex items-center justify-center text-xl font-bold border-2 transition-colors ${
+          activo ? "border-[var(--verde)]" : "border-transparent"
+        } ${foto ? "bg-[var(--fondo-suave)]" : "bg-[var(--verde-claro)] text-[var(--verde)]"}`}
+      >
+        {foto ? <img src={foto} alt="" loading="lazy" className="w-full h-full object-cover" /> : todos ? "★" : nombre.charAt(0).toUpperCase()}
+      </span>
+      <span className={`text-[11px] leading-tight text-center line-clamp-2 ${activo ? "font-bold text-[var(--verde)]" : "font-medium"}`}>{nombre}</span>
     </button>
   );
 }
 
-function Banners({ banners, nombre, bienvenida }) {
+function Banners({ banners, nombre, bienvenida, sinBienvenida }) {
   const contenedor = useRef(null);
   const [actual, setActual] = useState(0);
 
@@ -374,6 +443,7 @@ function Banners({ banners, nombre, bienvenida }) {
   }, [banners]);
 
   if (!banners || banners.length === 0) {
+    if (sinBienvenida) return null;
     return (
       <div className="mt-4 rounded-2xl bg-[var(--verde-claro)] px-5 py-7 text-center">
         <p className="text-xl font-bold text-[var(--verde)]">Bienvenido a {nombre}</p>

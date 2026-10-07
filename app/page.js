@@ -15,13 +15,14 @@ function coloresDesde(hex) {
 }
 
 export default async function Page() {
-  const [prod, ban, cfg, catf] = await Promise.all([
+  const [prod, ban, cfg, catf, dest] = await Promise.all([
     supabase.from("tienda_productos").select("*").order("nombre"),
-    supabase.from("tienda_banners").select("id, imagen_url, enlace, titulo, orden").order("orden"),
+    supabase.from("tienda_banners").select("*").order("orden"),
     // Datos editables desde la pantalla "Tienda online" del sistema. Si todavía no existen,
     // se usan los valores cargados en Vercel como respaldo.
     supabase.from("tienda_config").select("*").eq("id", 1).maybeSingle(),
     supabase.from("tienda_categorias_fotos").select("categoria, url"),
+    supabase.from("tienda_destacados").select("producto_id, orden").order("orden"),
   ]);
   const c = cfg.data || {};
 
@@ -40,6 +41,8 @@ export default async function Page() {
       c.sucursal_lat !== null && c.sucursal_lat !== undefined && c.sucursal_lng !== null && c.sucursal_lng !== undefined
         ? { lat: Number(c.sucursal_lat), lng: Number(c.sucursal_lng) }
         : null,
+    destacadosTitulo: c.destacados_titulo || "Novedades",
+    ubicacionLink: c.ubicacion_link || "",
     zonasEnvio: Array.isArray(c.zonas_envio) ? c.zonas_envio : [],
   };
 
@@ -50,7 +53,11 @@ export default async function Page() {
 
   return (
     <div style={colores}>
-      <Tienda productos={prod.data || []} banners={ban.data || []} config={config} fotosCategorias={fotosCategorias} hayError={!!prod.error} />
+      <Tienda
+        productos={prod.data || []}
+        banners={ban.data || []}
+        destacados={(dest.data || []).map((d) => String(d.producto_id))}
+        config={config} fotosCategorias={fotosCategorias} hayError={!!prod.error} />
     </div>
   );
 }
