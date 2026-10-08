@@ -697,6 +697,61 @@ function Pedido({ lineas, total, config, agregar, quitar, vaciar, cerrar }) {
   const [telefono, setTelefono] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [pedidoEnviado, setPedidoEnviado] = useState(null);
+  const [cuponAbierto, setCuponAbierto] = useState(false);
+  const [cuponCodigo, setCuponCodigo] = useState("");
+  const [cupon, setCupon] = useState(null); // cupón aplicado { codigo, descuento }
+  const [cuponMsg, setCuponMsg] = useState("");
+  const [validandoCupon, setValidandoCupon] = useState(false);
+
+  async function consultarCupon(codigo) {
+    const { data, error: e } = await supabase.rpc("validar_cupon", { p_codigo: codigo, p_subtotal: total, p_telefono: telefono.trim() });
+    if (e || !data) return { ok: false, mensaje: "No pudimos validar el cupón. Probá de nuevo." };
+    return data;
+  }
+
+  async function aplicarCupon() {
+    const codigo = cuponCodigo.trim();
+    if (!codigo || validandoCupon) return;
+    setValidandoCupon(true);
+    setCuponMsg("");
+    try {
+      const r = await consultarCupon(codigo);
+      if (r.ok) {
+        setCupon({ codigo: r.codigo, descuento: Number(r.descuento) || 0 });
+        setCuponMsg("");
+      } else {
+        setCupon(null);
+        setCuponMsg(r.mensaje || "Cupón no válido.");
+      }
+    } catch (e) {
+      setCuponMsg("No pudimos validar el cupón. Probá de nuevo.");
+    }
+    setValidandoCupon(false);
+  }
+
+  // Si cambia el total o el teléfono, el cupón aplicado se vuelve a comprobar.
+  useEffect(() => {
+    if (!cupon) return;
+    let activo = true;
+    const t = setTimeout(async () => {
+      try {
+        const r = await consultarCupon(cupon.codigo);
+        if (!activo) return;
+        if (r.ok) setCupon({ codigo: r.codigo, descuento: Number(r.descuento) || 0 });
+        else {
+          setCupon(null);
+          setCuponMsg(r.mensaje || "Cupón no válido.");
+        }
+      } catch (e) {
+        // se mantiene
+      }
+    }, 500);
+    return () => {
+      activo = false;
+      clearTimeout(t);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [total, telefono]);
 
   // Los datos del cliente se recuerdan en este celular para la próxima compra.
   useEffect(() => {
@@ -718,7 +773,8 @@ function Pedido({ lineas, total, config, agregar, quitar, vaciar, cerrar }) {
   const hayMapa = !!config.sucursal;
   const calculo = entrega === "envio" ? costoEnvio(config.zonasEnvio, config.sucursal, punto) : null;
   const costoFinal = entrega === "envio" && !gratis && calculo && !calculo.fuera ? calculo.precio : 0;
-  const totalFinal = total + costoFinal;
+  const descuentoCupon = cupon ? Math.min(cupon.descuento, total) : 0;
+  const totalFinal = total - descuentoCupon + costoFinal;
 
   async function enviar() {
     if (enviando) return;
@@ -769,6 +825,7 @@ function Pedido({ lineas, total, config, agregar, quitar, vaciar, cerrar }) {
           medio_pago: pago,
           notas: notas.trim(),
           total_productos: total,
+          cupon: cupon ? cupon.codigo : null,
           items: lineas.map((l) => ({
             producto_id: l.id,
             nombre: l.row.nombre,
@@ -780,6 +837,12 @@ function Pedido({ lineas, total, config, agregar, quitar, vaciar, cerrar }) {
         },
       });
       const { data, error: errPedido } = await Promise.race([guardar, new Promise((res) => setTimeout(() => res({ data: null, error: "tiempo" }), 6000))]);
+      if (errPedido && /cupon/i.test(String(errPedido.message || errPedido))) {
+        setCupon(null);
+        setCuponMsg(String(errPedido.message).replace(/^.*cupon:\s*/i, "") || "El cupón ya no es válido.");
+        setEnviando(false);
+        return setError("El cupón no se pudo usar. Revisalo y volvé a enviar el pedido.");
+      }
       if (!errPedido && data) numeroPedido = data;
     } catch (e) {
       // seguimos sin número de pedido
@@ -792,8 +855,9 @@ function Pedido({ lineas, total, config, agregar, quitar, vaciar, cerrar }) {
       ...detalle,
       "",
       `Total de productos: ${money(total)}`,
+      cupon ? `Cupón ${cupon.codigo}: -${money(descuentoCupon)}` : null,
       lineaEntrega,
-      costoFinal > 0 ? `Total con envío: ${money(totalFinal)}` : null,
+      costoFinal > 0 || cupon ? `Total a pagar: ${money(totalFinal)}` : null,
       `Medio de pago: ${pago}`,
       `Nombre: ${nombre.trim()}`,
       `Teléfono: ${telefono.trim()}`,
@@ -984,18 +1048,71 @@ function Pedido({ lineas, total, config, agregar, quitar, vaciar, cerrar }) {
               className="w-full px-4 py-3 rounded-xl border border-[var(--borde)] bg-white outline-none focus:border-[var(--verde)] text-base"
             />
 
+            <div className="mt-3">
+              {!cuponAbierto && !cupon ? (
+                <button type="button" onClick={() => setCuponAbierto(true)} className="text-sm font-semibold text-[var(--verde)] underline">
+                  ¿Tenés un cupón de descuento?
+                </button>
+              ) : cupon ? (
+                <div className="flex items-center justify-between rounded-xl bg-[var(--verde-claro)] px-4 py-3">
+                  <span className="text-sm font-semibold text-[var(--verde)]">✓ Cupón {cupon.codigo} aplicado</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCupon(null);
+                      setCuponCodigo("");
+                      setCuponMsg("");
+                    }}
+                    className="text-sm text-[var(--tinta-suave)] underline"
+                  >
+                    Quitar
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <div className="flex gap-2">
+                    <input
+                      value={cuponCodigo}
+                      onChange={(e) => setCuponCodigo(e.target.value.toUpperCase())}
+                      placeholder="Código del cupón"
+                      autoCapitalize="characters"
+                      className="flex-1 min-w-0 h-12 px-4 rounded-xl border border-[var(--borde)] bg-white outline-none focus:border-[var(--verde)] text-base"
+                    />
+                    <button
+                      type="button"
+                      onClick={aplicarCupon}
+                      disabled={validandoCupon || !cuponCodigo.trim()}
+                      className="h-12 px-5 rounded-xl bg-[var(--verde)] text-white font-bold disabled:opacity-50"
+                    >
+                      {validandoCupon ? "..." : "Aplicar"}
+                    </button>
+                  </div>
+                </div>
+              )}
+              {cuponMsg && <p className="text-sm text-red-700 mt-1">{cuponMsg}</p>}
+              {cupon && <p className="text-xs text-[var(--tinta-suave)] mt-1">El cupón se valida otra vez al enviar el pedido.</p>}
+            </div>
+
             <div className="flex items-center justify-between mt-4 mb-3">
               <span className="text-sm text-[var(--tinta-suave)]">Total de productos</span>
               <span className="text-xl font-extrabold">{money(total)}</span>
             </div>
-            {costoFinal > 0 && (
+            {cupon && (
+              <div className="flex items-center justify-between mb-3 -mt-1">
+                <span className="text-sm text-[var(--tinta-suave)]">Descuento ({cupon.codigo})</span>
+                <span className="font-bold text-[var(--verde)]">-{money(descuentoCupon)}</span>
+              </div>
+            )}
+            {(costoFinal > 0 || cupon) && (
               <>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm text-[var(--tinta-suave)]">Envío</span>
-                  <span className="font-bold">{money(costoFinal)}</span>
-                </div>
+                {costoFinal > 0 && (
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm text-[var(--tinta-suave)]">Envío</span>
+                    <span className="font-bold">{money(costoFinal)}</span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-semibold">Total con envío</span>
+                  <span className="text-sm font-semibold">Total a pagar</span>
                   <span className="text-xl font-extrabold text-[var(--verde)]">{money(totalFinal)}</span>
                 </div>
               </>
