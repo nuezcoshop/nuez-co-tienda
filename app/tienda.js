@@ -607,6 +607,9 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
         <div className="p-5">
           {item.categoria && <p className="text-xs font-medium text-[var(--tinta-suave)] uppercase tracking-wide">{item.categoria}</p>}
           <h2 className="text-xl font-bold leading-snug mt-0.5">{item.nombre}</h2>
+          {(item.descripcion || (opciones.find((o) => o.descripcion) || {}).descripcion) && (
+            <p className="text-sm text-[var(--tinta-suave)] mt-1.5 leading-snug">{item.descripcion || opciones.find((o) => o.descripcion).descripcion}</p>
+          )}
 
           {item.tipo === "variantes" && (
             <div className="flex flex-wrap gap-2 mt-3">
