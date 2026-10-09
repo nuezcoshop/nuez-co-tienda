@@ -322,12 +322,12 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
           </button>
           <button
             onClick={() => setCarritoAbierto(true)}
-            className="relative w-11 h-11 rounded-full bg-[var(--verde-claro)] text-[var(--verde)] flex items-center justify-center"
+            className="relative w-11 h-11 rounded-full text-[var(--verde)] flex items-center justify-center justify-self-end"
             aria-label="Ver pedido"
           >
-            <IconoCarrito />
+            <IconoCarrito className="w-7 h-7" />
             {cantidadLineas > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 rounded-full bg-[var(--amarillo)] text-[var(--tinta)] text-xs font-bold flex items-center justify-center">
+              <span className="absolute top-0 -right-1 min-w-[20px] h-5 px-1 rounded-full bg-[var(--amarillo)] text-[var(--tinta)] text-xs font-bold flex items-center justify-center">
                 {cantidadLineas}
               </span>
             )}
@@ -336,7 +336,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
       </div>
 
       {!esInicio && (
-      <div className="sticky top-0 z-30 bg-[var(--fondo)] border-b border-[var(--borde)]">
+      <div className="sticky top-0 z-30 bg-[var(--fondo)]">
         <div className="max-w-5xl mx-auto px-4 pt-2 pb-2">
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--tinta-suave)]">
@@ -398,26 +398,14 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
         {esInicio && bannersInicio.length > 0 && <Banners banners={bannersInicio} sinBienvenida onEnlace={abrirEnlace} />}
 
         {esInicio && config.nosotros && config.nosotros.activo && (config.nosotros.texto || config.nosotros.foto || config.nosotros.subtitulo) && (
-          <section className="mt-6">
-            <h2 className="text-lg font-bold text-[var(--verde)] mb-3">{config.nosotros.titulo}</h2>
-            <div className="rounded-2xl overflow-hidden border border-[var(--borde)] bg-white">
-              {config.nosotros.foto && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={config.nosotros.foto} alt={config.nosotros.subtitulo || config.nosotros.titulo} loading="lazy" decoding="async" className="w-full max-h-80 object-cover" />
-              )}
-              <div className="p-5">
-                {config.nosotros.subtitulo && <h3 className="text-xl font-extrabold leading-snug">{config.nosotros.subtitulo}</h3>}
-                {config.nosotros.texto && <p className="text-sm text-[var(--tinta-suave)] mt-2 leading-relaxed whitespace-pre-line">{config.nosotros.texto}</p>}
-              </div>
-            </div>
-          </section>
+          <Nosotros datos={config.nosotros} />
         )}
 
         {esInicio && (config.direccion || config.horario || enlaceUbicacion) && (
           <section className="mt-6 rounded-2xl bg-[var(--fondo-suave)] p-5">
             <h2 className="text-lg font-bold text-[var(--verde)] mb-2">Visitanos</h2>
-            {config.direccion && <p className="text-sm font-semibold">{config.direccion}</p>}
-            {config.horario && <p className="text-sm text-[var(--tinta-suave)] mt-1">{config.horario}</p>}
+            {config.direccion && <p className="text-sm font-semibold text-[var(--verde)]">{config.direccion}</p>}
+            {config.horario && <p className="text-sm text-[var(--verde)] opacity-80 mt-1">{config.horario}</p>}
             {enlaceUbicacion && (
               <a
                 href={enlaceUbicacion}
@@ -538,6 +526,33 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
   );
 }
 
+function Nosotros({ datos }) {
+  const [abierto, setAbierto] = useState(false);
+  const largo = (datos.texto || "").length > 140 || (datos.texto || "").includes("\n");
+  return (
+    <section className="mt-6">
+      <h2 className="text-lg font-bold text-[var(--verde)] mb-3">{datos.titulo}</h2>
+      <div className="rounded-2xl overflow-hidden bg-[var(--fondo-suave)]">
+        {datos.foto && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={datos.foto} alt={datos.subtitulo || datos.titulo} loading="lazy" decoding="async" className="w-full max-h-80 object-cover" />
+        )}
+        <div className="p-5 text-[var(--verde)]">
+          {datos.subtitulo && <h3 className="text-xl font-extrabold leading-snug">{datos.subtitulo}</h3>}
+          {datos.texto && (
+            <p className={`text-sm mt-2 leading-relaxed whitespace-pre-line opacity-90 ${abierto ? "" : "line-clamp-3"}`}>{datos.texto}</p>
+          )}
+          {datos.texto && largo && (
+            <button onClick={() => setAbierto(!abierto)} className="mt-3 h-10 px-5 rounded-full border-2 border-[var(--verde)] text-sm font-semibold" aria-expanded={abierto}>
+              {abierto ? "Leer menos" : "Leer más"}
+            </button>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function CirculoCategoria({ nombre, foto, activo, onClick, todos }) {
   const ref = useRef(null);
   useEffect(() => {
@@ -552,7 +567,7 @@ function CirculoCategoria({ nombre, foto, activo, onClick, todos }) {
       >
         {foto ? <img src={foto} alt="" loading="lazy" className="w-full h-full object-cover" /> : todos ? "★" : nombre.charAt(0).toUpperCase()}
       </span>
-      <span className={`text-[11px] leading-tight text-center line-clamp-2 ${activo ? "font-bold text-[var(--verde)]" : "font-medium"}`}>{nombre}</span>
+      <span className={`text-[11px] leading-tight text-center line-clamp-2 text-[var(--verde)] ${activo ? "font-bold" : "font-medium"}`}>{nombre}</span>
     </button>
   );
 }

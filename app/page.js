@@ -18,6 +18,9 @@ function coloresDesde(hex, fondo) {
     vars["--verde"] = hex;
     vars["--verde-oscuro"] = mezclar(hex, 0.78, 0);
     vars["--verde-claro"] = mezclar(hex, 0.12, 255);
+    // Textos en tonos del color principal (en vez de negro/gris) para que todo combine.
+    vars["--tinta"] = mezclar(hex, 0.6, 0);
+    vars["--tinta-suave"] = mezclar(hex, 0.7, 255);
   }
   if (esHex(fondo)) {
     vars["--fondo"] = fondo;
