@@ -74,7 +74,7 @@ export default async function Page() {
   (catf.data || []).forEach((f) => (fotosCategorias[f.categoria] = f.url));
 
   return (
-    <div style={colores}>
+    <div style={{ ...colores, color: "var(--tinta)" }}>
       {esHex(c.color_fondo) && <style>{`html,body{background:${c.color_fondo}}`}</style>}
       <Tienda
         productos={prod.data || []}

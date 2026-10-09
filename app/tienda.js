@@ -476,22 +476,22 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
           <nav className="absolute left-0 top-0 bottom-0 w-72 max-w-[80%] bg-[var(--fondo)] shadow-xl p-5 flex flex-col" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               {config.logo ? <img src={config.logo} alt={config.nombre} className="h-9 w-auto max-w-[160px] object-contain" /> : <span className="text-xl font-extrabold text-[var(--verde)]">{config.nombre}</span>}
-              <button onClick={() => setMenuAbierto(false)} className="w-10 h-10 rounded-full text-lg" aria-label="Cerrar menú">
+              <button onClick={() => setMenuAbierto(false)} className="w-10 h-10 rounded-full text-lg text-[var(--verde)]" aria-label="Cerrar menú">
                 ✕
               </button>
             </div>
-            <button onClick={irAInicio} className="text-left text-lg font-semibold py-4 border-b border-[var(--borde)]">
+            <button onClick={irAInicio} className="text-left text-lg font-semibold py-4 border-b border-[var(--verde)]/20 text-[var(--verde)]">
               Inicio
             </button>
-            <button onClick={irATienda} className="text-left text-lg font-semibold py-4 border-b border-[var(--borde)]">
+            <button onClick={irATienda} className="text-left text-lg font-semibold py-4 border-b border-[var(--verde)]/20 text-[var(--verde)]">
               Productos
             </button>
             {enlaceContacto ? (
-              <a href={enlaceContacto} target="_blank" rel="noopener noreferrer" onClick={() => setMenuAbierto(false)} className="text-lg font-semibold py-4 border-b border-[var(--borde)] flex items-center justify-between">
-                Contacto <span className="text-sm font-normal text-[var(--tinta-suave)]">WhatsApp</span>
+              <a href={enlaceContacto} target="_blank" rel="noopener noreferrer" onClick={() => setMenuAbierto(false)} className="text-lg font-semibold py-4 border-b border-[var(--verde)]/20 text-[var(--verde)]">
+                Contactanos por WhatsApp
               </a>
             ) : (
-              <span className="text-lg font-semibold py-4 border-b border-[var(--borde)] opacity-50">Contacto</span>
+              <span className="text-lg font-semibold py-4 border-b border-[var(--verde)]/20 text-[var(--verde)] opacity-50">Contactanos por WhatsApp</span>
             )}
           </nav>
         </div>
