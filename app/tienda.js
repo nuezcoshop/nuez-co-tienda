@@ -37,14 +37,24 @@ function normalizarEnlace(url) {
   if (/^(https?:|mailto:|tel:|whatsapp:)/i.test(u) || u.startsWith("/") || u.startsWith("#")) return u;
   return "https://" + u;
 }
-function esExterno(url) {
+// Dominios propios de la tienda: un enlace a cualquiera de ellos (con o sin www) se considera "interno".
+const DOMINIOS_PROPIOS = ["nuezco.com.ar", "nuezco.shop"];
+const sinWww = (h) => String(h || "").toLowerCase().replace(/^www\./, "");
+function urlInterna(url) {
   const u = normalizarEnlace(url);
-  if (!/^https?:/i.test(u)) return false;
+  if (u.startsWith("/") || u.startsWith("#")) return new URL(u, window.location.origin);
+  if (!/^https?:/i.test(u)) return null;
   try {
-    return new URL(u).host !== window.location.host;
+    const x = new URL(u);
+    const h = sinWww(x.host);
+    if (h === sinWww(window.location.host) || DOMINIOS_PROPIOS.includes(h)) return x;
   } catch (e) {
-    return true;
+    // enlace raro: se trata como externo
   }
+  return null;
+}
+function esExterno(url) {
+  return /^https?:/i.test(normalizarEnlace(url)) && !urlInterna(url);
 }
 
 function IconoCarrito({ className = "w-6 h-6" }) {
@@ -231,6 +241,35 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
     window.scrollTo({ top: 0 });
   }
 
+  // Enlaces de banners que apuntan a la propia tienda: se resuelven acá, sin recargar y sin importar el dominio.
+  function abrirEnlace(e, url) {
+    let x = null;
+    try {
+      x = urlInterna(url);
+    } catch (err) {
+      x = null;
+    }
+    if (!x) return; // externo: el enlace normal se abre en otra pestaña
+    const cat = x.searchParams.get("categoria");
+    const bus = x.searchParams.get("buscar");
+    const prod = x.searchParams.get("producto");
+    const esHome = /^\/?$/.test(x.pathname);
+    if (!cat && !bus && !prod && !esHome) return; // otra página: se abre normal
+    e.preventDefault();
+    if (cat || bus) {
+      setCategoria(cat || "");
+      setBusqueda(bus || "");
+      setVista("tienda");
+      window.scrollTo({ top: 0 });
+    } else if (!prod) {
+      irAInicio();
+    }
+    if (prod) {
+      const it = items.find((i) => String(i.id) === prod || (i.variantes || []).some((v) => String(v.id) === prod));
+      if (it) setDetalle(it);
+    }
+  }
+
   function irATienda() {
     setCategoria("");
     setBusqueda("");
@@ -328,7 +367,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
           </div>
         )}
 
-        {esInicio && <Banners banners={bannersPrincipal} nombre={config.nombre} bienvenida={config.bienvenida} grande />}
+        {esInicio && <Banners banners={bannersPrincipal} nombre={config.nombre} bienvenida={config.bienvenida} grande onEnlace={abrirEnlace} />}
 
         {esInicio && productosDestacados.length > 0 && (
           <section className="mt-6">
@@ -356,7 +395,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
           </div>
         )}
 
-        {esInicio && bannersInicio.length > 0 && <Banners banners={bannersInicio} sinBienvenida />}
+        {esInicio && bannersInicio.length > 0 && <Banners banners={bannersInicio} sinBienvenida onEnlace={abrirEnlace} />}
 
         {esInicio && config.nosotros && config.nosotros.activo && (config.nosotros.texto || config.nosotros.foto || config.nosotros.subtitulo) && (
           <section className="mt-6">
@@ -518,7 +557,7 @@ function CirculoCategoria({ nombre, foto, activo, onClick, todos }) {
   );
 }
 
-function Banners({ banners, nombre, bienvenida, sinBienvenida, grande }) {
+function Banners({ banners, nombre, bienvenida, sinBienvenida, grande, onEnlace }) {
   const contenedor = useRef(null);
   const [actual, setActual] = useState(0);
 
@@ -567,6 +606,7 @@ function Banners({ banners, nombre, bienvenida, sinBienvenida, grande }) {
                   href={normalizarEnlace(b.enlace)}
                   target={esExterno(b.enlace) ? "_blank" : undefined}
                   rel={esExterno(b.enlace) ? "noopener noreferrer" : undefined}
+                  onClick={(e) => onEnlace && onEnlace(e, b.enlace)}
                   className="block w-full h-full"
                 >
                   {imagen}
