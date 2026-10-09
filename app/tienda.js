@@ -734,7 +734,7 @@ function CarruselFavoritos({ items, carrito, abrir }) {
               left: "50%",
               width: 160,
               marginLeft: -80,
-              transform: `translateX(${d * 150}px) scale(${centro ? 1.08 : 0.82})`,
+              transform: `translateX(${d * 188}px) scale(${centro ? 1.08 : 0.82})`,
               opacity: visible ? (centro ? 1 : 0.85) : 0,
               zIndex: 10 - Math.abs(d),
               pointerEvents: visible ? "auto" : "none",
