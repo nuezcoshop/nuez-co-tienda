@@ -69,6 +69,13 @@ body {
 @keyframes zoom-lento { from { transform: scale(1); } to { transform: scale(1.08); } }
 .zoom-lento { animation: zoom-lento 14s ease-in-out infinite alternate; }
 
+/* Logo final: crece al llegar al final de la página y se achica al subir */
+@keyframes crecer { from { transform: scale(0.5); opacity: 0.3; } to { transform: scale(1.12); opacity: 1; } }
+@supports (animation-timeline: view()) {
+  .logo-final { animation: crecer linear both; animation-timeline: view(); animation-range: entry 0% entry 100%; }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .logo-final,
   .rev, .encoge, .casc, .salto, .cinta-pista, .fundir, .deslizar-izq, .subir, .zoom-lento { animation: none !important; }
 }
