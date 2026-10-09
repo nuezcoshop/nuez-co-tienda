@@ -603,7 +603,7 @@ function Banners({ banners, nombre, bienvenida, sinBienvenida, grande, onEnlace 
       if (!el || Date.now() < pausaHasta.current) return;
       const siguiente = (Math.round(el.scrollLeft / el.clientWidth) + 1) % banners.length;
       el.scrollTo({ left: siguiente * el.clientWidth, behavior: "smooth" });
-    }, 2500);
+    }, 3000);
     return () => clearInterval(t);
   }, [banners]);
 
@@ -734,7 +734,7 @@ function CarruselFavoritos({ items, carrito, abrir }) {
               left: "50%",
               width: 160,
               marginLeft: -80,
-              transform: `translateX(${d * 188}px) scale(${centro ? 1.08 : 0.82})`,
+              transform: `translateX(${d * 178}px) scale(${centro ? 1.08 : 0.82})`,
               opacity: visible ? (centro ? 1 : 0.85) : 0,
               zIndex: 10 - Math.abs(d),
               pointerEvents: visible ? "auto" : "none",
