@@ -12,7 +12,7 @@ function mezclar(hex, k, base) {
   const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
   return "#" + [r, g, b].map((v) => Math.round(v * k + base * (1 - k)).toString(16).padStart(2, "0")).join("");
 }
-function coloresDesde(hex, fondo) {
+function coloresDesde(hex, fondo, acento) {
   const vars = {};
   if (esHex(hex)) {
     vars["--verde"] = hex;
@@ -26,6 +26,12 @@ function coloresDesde(hex, fondo) {
     vars["--fondo"] = fondo;
     vars["--fondo-suave"] = mezclar(fondo, 0.95, 0); // un poquito más oscuro, para buscador y relleno
   }
+  // Color de acento (rellenos de botones y detalles). Si no se eligió, se usa el principal.
+  const base = esHex(acento) ? acento : esHex(hex) ? hex : "#2f7a55";
+  const n = parseInt(base.slice(1), 16);
+  const lum = (0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
+  vars["--acento"] = base;
+  vars["--sobre-acento"] = lum > 0.62 ? "#2a2018" : "#ffffff"; // texto legible encima del acento
   return vars;
 }
 
@@ -70,7 +76,7 @@ export default async function Page() {
   };
 
   // Color principal elegido en el sistema (si no hay, queda el verde de siempre).
-  const colores = coloresDesde(c.color_principal, c.color_fondo);
+  const colores = coloresDesde(c.color_principal, c.color_fondo, c.color_acento);
   const fotosCategorias = {};
   (catf.data || []).forEach((f) => (fotosCategorias[f.categoria] = f.url));
 

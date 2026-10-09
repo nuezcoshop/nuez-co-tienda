@@ -338,7 +338,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
           >
             <IconoCarrito className="w-7 h-7" />
             {cantidadLineas > 0 && (
-              <span className="absolute top-0 -right-1 min-w-[20px] h-5 px-1 rounded-full bg-[var(--amarillo)] text-[var(--tinta)] text-xs font-bold flex items-center justify-center">
+              <span className="absolute top-0 -right-1 min-w-[20px] h-5 px-1 rounded-full bg-[var(--acento)] text-[var(--sobre-acento)] text-xs font-bold flex items-center justify-center">
                 {cantidadLineas}
               </span>
             )}
@@ -384,7 +384,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
           <section className="mt-6">
             <div className="flex items-center justify-between gap-3 mb-3">
               <h2 className="text-lg font-bold text-[var(--verde)]">{config.destacadosTitulo}</h2>
-              <button onClick={irATienda} className="shrink-0 h-9 px-4 rounded-full bg-[var(--verde)] text-white text-sm font-semibold active:scale-[0.98]">
+              <button onClick={irATienda} className="shrink-0 h-9 px-4 rounded-full bg-[var(--acento)] text-[var(--sobre-acento)] text-sm font-semibold active:scale-[0.98]">
                 Ir a la tienda →
               </button>
             </div>
@@ -400,7 +400,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
 
         {esInicio && productosDestacados.length === 0 && (
           <div className="mt-6 text-center">
-            <button onClick={irATienda} className="h-12 px-8 rounded-full bg-[var(--verde)] text-white font-semibold">
+            <button onClick={irATienda} className="h-12 px-8 rounded-full bg-[var(--acento)] text-[var(--sobre-acento)] font-semibold">
               Ir a la tienda →
             </button>
           </div>
@@ -422,7 +422,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
                 href={enlaceUbicacion}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-3 inline-flex items-center h-11 px-5 rounded-full bg-[var(--verde)] text-white text-sm font-semibold"
+                className="mt-3 inline-flex items-center h-11 px-5 rounded-full bg-[var(--acento)] text-[var(--sobre-acento)] text-sm font-semibold"
               >
                 📍 Cómo llegar
               </a>
@@ -465,7 +465,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
         <div className="fixed bottom-0 inset-x-0 z-40 p-3 bg-gradient-to-t from-[var(--fondo)] via-[var(--fondo)] to-transparent">
           <button
             onClick={() => setCarritoAbierto(true)}
-            className="max-w-5xl mx-auto w-full h-14 rounded-2xl bg-[var(--verde)] text-white flex items-center justify-between px-5 shadow-lg active:scale-[0.99]"
+            className="max-w-5xl mx-auto w-full h-14 rounded-2xl bg-[var(--acento)] text-[var(--sobre-acento)] flex items-center justify-between px-5 shadow-lg active:scale-[0.99]"
           >
             <span className="font-semibold">
               Ver pedido ({cantidadLineas} {cantidadLineas === 1 ? "producto" : "productos"})
@@ -574,7 +574,7 @@ function CirculoCategoria({ nombre, activo, onClick }) {
       ref={ref}
       onClick={onClick}
       className={`shrink-0 h-11 px-5 rounded-full border-2 border-[var(--verde)] font-extrabold text-[15px] whitespace-nowrap transition-colors ${
-        activo ? "bg-[var(--verde)] text-[var(--fondo)]" : "bg-transparent text-[var(--verde)]"
+        activo ? "bg-[var(--acento)] text-[var(--sobre-acento)]" : "bg-transparent text-[var(--verde)]"
       }`}
     >
       {nombre}
@@ -681,7 +681,7 @@ function Tarjeta({ item, carrito, abrir }) {
           <span className="absolute top-2 left-2 text-[11px] font-semibold bg-[var(--amarillo)] text-[var(--tinta)] px-2 py-1 rounded-full">Precio por cantidad</span>
         )}
         {enCarrito && (
-          <span className="absolute top-2 right-2 w-6 h-6 rounded-full bg-[var(--verde)] text-white text-xs flex items-center justify-center">✓</span>
+          <span className="absolute top-2 right-2 w-6 h-6 rounded-full bg-[var(--acento)] text-[var(--sobre-acento)] text-xs flex items-center justify-center">✓</span>
         )}
       </div>
       <div className="p-3 flex flex-col gap-1 flex-1 text-[var(--verde)] border-t border-[var(--verde)]">
@@ -689,7 +689,7 @@ function Tarjeta({ item, carrito, abrir }) {
         <div className="flex items-center justify-between mt-1">
           <p className="font-medium text-[15px]">{precioTexto}</p>
           {item.hayStock && (
-            <span className="w-9 h-9 rounded-full border border-[var(--verde)] text-[var(--verde)] text-xl font-light flex items-center justify-center">+</span>
+            <span className="w-9 h-9 rounded-full bg-[var(--acento)] text-[var(--sobre-acento)] text-xl font-normal flex items-center justify-center">+</span>
           )}
         </div>
       </div>
@@ -775,7 +775,7 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
                   <button
                     key={v.id}
                     onClick={() => elegirOpcion(v.id)}
-                    className={`h-11 px-4 rounded-xl text-sm font-semibold border ${activo ? "bg-[var(--verde)] text-white border-[var(--verde)]" : "bg-white border-[var(--borde)]"}`}
+                    className={`h-11 px-4 rounded-xl text-sm font-semibold border ${activo ? "bg-[var(--acento)] text-[var(--sobre-acento)] border-[var(--verde)]" : "bg-white border-[var(--borde)]"}`}
                   >
                     {etiqueta} · {money(precioPorCantidad(v, 1))}
                   </button>
@@ -831,7 +831,7 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
           <button
             onClick={() => onAgregar(opcion.id, cant)}
             disabled={max <= 0}
-            className="mt-5 w-full h-14 rounded-2xl bg-[var(--verde)] hover:bg-[var(--verde-oscuro)] text-white font-bold flex items-center justify-between px-5 active:scale-[0.99] disabled:opacity-50"
+            className="mt-5 w-full h-14 rounded-2xl bg-[var(--acento)] hover:brightness-95 text-[var(--sobre-acento)] font-bold flex items-center justify-between px-5 active:scale-[0.99] disabled:opacity-50"
           >
             <span>Agregar al carrito</span>
             <span>{money(subtotal)}</span>
@@ -1046,7 +1046,7 @@ function Pedido({ lineas, total, config, agregar, quitar, vaciar, cerrar }) {
           <a href={pedidoEnviado.url} className="mt-5 block w-full h-12 leading-[3rem] rounded-xl border border-[var(--borde)] text-sm font-semibold">
             Si no se abrió WhatsApp, tocá acá
           </a>
-          <button onClick={cerrar} className="mt-3 w-full h-14 rounded-2xl bg-[var(--verde)] text-white font-bold">
+          <button onClick={cerrar} className="mt-3 w-full h-14 rounded-2xl bg-[var(--acento)] text-[var(--sobre-acento)] font-bold">
             Seguir comprando
           </button>
         </div>
@@ -1070,7 +1070,7 @@ function Pedido({ lineas, total, config, agregar, quitar, vaciar, cerrar }) {
               {gratis ? "¡Tenés envío gratis!" : `Te faltan ${money(faltaParaGratis)} para envío gratis`}
             </p>
             <div className="h-2 rounded-full bg-[var(--fondo-suave)] overflow-hidden">
-              <div className="h-full bg-[var(--verde)] rounded-full transition-all" style={{ width: `${progreso * 100}%` }} />
+              <div className="h-full bg-[var(--acento)] rounded-full transition-all" style={{ width: `${progreso * 100}%` }} />
             </div>
           </div>
         )}
@@ -1117,7 +1117,7 @@ function Pedido({ lineas, total, config, agregar, quitar, vaciar, cerrar }) {
                       setConfirmandoVaciar(false);
                       vaciar();
                     }}
-                    className="flex-1 h-11 rounded-xl bg-[var(--verde)] text-white text-sm font-semibold"
+                    className="flex-1 h-11 rounded-xl bg-[var(--acento)] text-[var(--sobre-acento)] text-sm font-semibold"
                   >
                     Sí, vaciar
                   </button>
@@ -1240,7 +1240,7 @@ function Pedido({ lineas, total, config, agregar, quitar, vaciar, cerrar }) {
                       type="button"
                       onClick={aplicarCupon}
                       disabled={validandoCupon || !cuponCodigo.trim()}
-                      className="h-12 px-5 rounded-xl bg-[var(--verde)] text-white font-bold disabled:opacity-50"
+                      className="h-12 px-5 rounded-xl bg-[var(--acento)] text-[var(--sobre-acento)] font-bold disabled:opacity-50"
                     >
                       {validandoCupon ? "..." : "Aplicar"}
                     </button>
@@ -1303,7 +1303,7 @@ function Opcion({ activo, onClick, children }) {
   return (
     <button
       onClick={onClick}
-      className={`h-12 rounded-xl text-sm font-semibold border ${activo ? "bg-[var(--verde)] text-white border-[var(--verde)]" : "bg-white border-[var(--borde)]"}`}
+      className={`h-12 rounded-xl text-sm font-semibold border ${activo ? "bg-[var(--acento)] text-[var(--sobre-acento)] border-[var(--verde)]" : "bg-white border-[var(--borde)]"}`}
     >
       {children}
     </button>
