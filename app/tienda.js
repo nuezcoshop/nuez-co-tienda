@@ -468,7 +468,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
         <div className="logo-final mt-12 mb-8 flex flex-col items-center text-center">
           {config.logo ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={config.logo} alt={config.nombre} className="h-32 w-auto max-w-[75%] object-contain" />
+            <img src={config.logo} alt={config.nombre} className="h-36 w-auto max-w-[85%] object-contain" />
           ) : (
             <span className="text-5xl font-extrabold text-[var(--verde)]">{config.nombre}</span>
           )}
