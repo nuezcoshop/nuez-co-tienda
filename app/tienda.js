@@ -399,13 +399,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
                 Ir a la tienda →
               </button>
             </div>
-            <CarruselAuto>
-              {productosDestacados.map((item) => (
-                <div key={item.id} className="w-40 shrink-0 snap-start flex">
-                  <Tarjeta item={item} carrito={carrito} abrir={() => setDetalle(item)} />
-                </div>
-              ))}
-            </CarruselAuto>
+            <CarruselFavoritos items={productosDestacados} carrito={carrito} abrir={(item) => setDetalle(item)} />
           </section>
         )}
 
@@ -609,7 +603,7 @@ function Banners({ banners, nombre, bienvenida, sinBienvenida, grande, onEnlace 
       if (!el || Date.now() < pausaHasta.current) return;
       const siguiente = (Math.round(el.scrollLeft / el.clientWidth) + 1) % banners.length;
       el.scrollTo({ left: siguiente * el.clientWidth, behavior: "smooth" });
-    }, 3200);
+    }, 2500);
     return () => clearInterval(t);
   }, [banners]);
 
@@ -671,44 +665,86 @@ function Banners({ banners, nombre, bienvenida, sinBienvenida, grande, onEnlace 
   );
 }
 
-// Carrusel de favoritos: avanza solo, se detiene unos segundos en cada producto y se frena si la persona lo toca.
-function CarruselAuto({ children }) {
-  const ref = useRef(null);
+// Carrusel de favoritos "sin fin": el producto del medio se agranda, los de los costados se achican,
+// avanza solo uno a uno y el último se conecta con el primero. Se frena si la persona lo toca.
+function CarruselFavoritos({ items, carrito, abrir }) {
+  const n = items.length;
+  const veces = n >= 2 ? Math.ceil(7 / n) : 1; // con pocos productos se repiten para que el giro se vea continuo
+  const lista = [];
+  for (let k = 0; k < veces; k++) items.forEach((it) => lista.push(it));
+  const m = lista.length;
+  const [indice, setIndice] = useState(0);
   const pausaHasta = useRef(0);
+  const inicioX = useRef(null);
+
   useEffect(() => {
+    if (m < 2) return;
     if (typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const t = setInterval(() => {
-      const el = ref.current;
-      if (!el || document.hidden || Date.now() < pausaHasta.current) return;
-      const hijos = el.children;
-      if (hijos.length < 2) return;
-      const finalAlcanzado = el.scrollLeft + el.clientWidth >= el.scrollWidth - 4;
-      if (finalAlcanzado) {
-        el.scrollTo({ left: 0, behavior: "smooth" });
-        return;
-      }
-      let siguiente = 0;
-      for (let i = 0; i < hijos.length; i++) {
-        if (hijos[i].offsetLeft - hijos[0].offsetLeft > el.scrollLeft + 4) {
-          siguiente = hijos[i].offsetLeft - hijos[0].offsetLeft;
-          break;
-        }
-      }
-      el.scrollTo({ left: siguiente, behavior: "smooth" });
-    }, 3500);
+      if (document.hidden || Date.now() < pausaHasta.current) return;
+      setIndice((i) => (i + 1) % m);
+    }, 2500);
     return () => clearInterval(t);
-  }, []);
-  const frenar = () => (pausaHasta.current = Date.now() + 10000);
+  }, [m]);
+
+  const frenar = () => (pausaHasta.current = Date.now() + 8000);
+  const mover = (delta) => setIndice((i) => (i + delta + m) % m);
+
+  if (m === 1) {
+    return (
+      <div className="flex justify-center">
+        <div className="w-44 flex">
+          <Tarjeta item={items[0]} carrito={carrito} abrir={() => abrir(items[0])} />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
-      ref={ref}
-      onTouchStart={frenar}
-      onPointerDown={frenar}
-      onWheel={frenar}
+      className="relative -mx-4 overflow-hidden py-5"
       onMouseEnter={frenar}
-      className="flex gap-3 overflow-x-auto sin-barra snap-x -mx-4 px-4 pb-2"
+      onMouseMove={frenar}
+      onTouchStart={(e) => {
+        frenar();
+        inicioX.current = e.touches[0].clientX;
+      }}
+      onTouchEnd={(e) => {
+        if (inicioX.current === null) return;
+        const dx = e.changedTouches[0].clientX - inicioX.current;
+        inicioX.current = null;
+        if (Math.abs(dx) > 40) mover(dx < 0 ? 1 : -1);
+      }}
+      style={{ touchAction: "pan-y" }}
     >
-      {children}
+      {/* copia invisible: da el alto al carrusel */}
+      <div className="invisible w-40 mx-auto pointer-events-none" aria-hidden="true">
+        <Tarjeta item={items[0]} carrito={carrito} abrir={() => {}} />
+      </div>
+      {lista.map((item, i) => {
+        let d = (((i - indice) % m) + m) % m;
+        if (d > m / 2) d -= m;
+        const visible = Math.abs(d) <= 2;
+        const centro = d === 0;
+        return (
+          <div
+            key={i}
+            className="absolute top-5 flex"
+            style={{
+              left: "50%",
+              width: 160,
+              marginLeft: -80,
+              transform: `translateX(${d * 150}px) scale(${centro ? 1.08 : 0.82})`,
+              opacity: visible ? (centro ? 1 : 0.85) : 0,
+              zIndex: 10 - Math.abs(d),
+              pointerEvents: visible ? "auto" : "none",
+              transition: "transform 0.55s cubic-bezier(0.22, 0.8, 0.3, 1), opacity 0.4s ease",
+            }}
+          >
+            <Tarjeta item={item} carrito={carrito} abrir={() => (centro ? abrir(item) : (frenar(), setIndice(i)))} />
+          </div>
+        );
+      })}
     </div>
   );
 }
