@@ -31,7 +31,10 @@ function coloresDesde(hex, fondo, acento) {
   const n = parseInt(base.slice(1), 16);
   const lum = (0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
   vars["--acento"] = base;
-  vars["--sobre-acento"] = lum > 0.62 ? "#2a2018" : "#ffffff"; // texto legible encima del acento
+  // Texto sobre el acento: el color principal si contrasta bien; si no, oscuro o blanco.
+  const lumDe = (h) => { const m = parseInt(h.slice(1), 16); return (0.299 * ((m >> 16) & 255) + 0.587 * ((m >> 8) & 255) + 0.114 * (m & 255)) / 255; };
+  const principal = esHex(hex) ? hex : null;
+  vars["--sobre-acento"] = principal && Math.abs(lumDe(principal) - lum) > 0.3 ? principal : lum > 0.62 ? "#2a2018" : "#ffffff";
   return vars;
 }
 

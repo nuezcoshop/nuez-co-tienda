@@ -384,7 +384,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
           <section className="mt-6">
             <div className="flex items-center justify-between gap-3 mb-3">
               <h2 className="text-lg font-bold text-[var(--verde)]">{config.destacadosTitulo}</h2>
-              <button onClick={irATienda} className="shrink-0 h-9 px-4 rounded-full bg-[var(--acento)] text-[var(--sobre-acento)] text-sm font-semibold active:scale-[0.98]">
+              <button onClick={irATienda} className="shrink-0 h-9 px-4 rounded-full border-2 border-[var(--verde)] bg-[var(--acento)] text-[var(--sobre-acento)] text-sm font-semibold active:scale-[0.98]">
                 Ir a la tienda →
               </button>
             </div>
@@ -400,7 +400,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
 
         {esInicio && productosDestacados.length === 0 && (
           <div className="mt-6 text-center">
-            <button onClick={irATienda} className="h-12 px-8 rounded-full bg-[var(--acento)] text-[var(--sobre-acento)] font-semibold">
+            <button onClick={irATienda} className="h-12 px-8 rounded-full border-2 border-[var(--verde)] bg-[var(--acento)] text-[var(--sobre-acento)] font-semibold">
               Ir a la tienda →
             </button>
           </div>
