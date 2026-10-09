@@ -6,12 +6,24 @@ import Tienda from "./tienda";
 export const revalidate = 60;
 
 // A partir de un color "#rrggbb" arma el color oscuro (botón apretado) y el claro (fondos suaves).
-function coloresDesde(hex) {
-  if (!/^#[0-9a-fA-F]{6}$/.test(hex || "")) return {};
+const esHex = (h) => /^#[0-9a-fA-F]{6}$/.test(h || "");
+function mezclar(hex, k, base) {
   const n = parseInt(hex.slice(1), 16);
   const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
-  const mezcla = (k, base) => "#" + [r, g, b].map((v) => Math.round(v * k + base * (1 - k)).toString(16).padStart(2, "0")).join("");
-  return { "--verde": hex, "--verde-oscuro": mezcla(0.78, 0), "--verde-claro": mezcla(0.12, 255) };
+  return "#" + [r, g, b].map((v) => Math.round(v * k + base * (1 - k)).toString(16).padStart(2, "0")).join("");
+}
+function coloresDesde(hex, fondo) {
+  const vars = {};
+  if (esHex(hex)) {
+    vars["--verde"] = hex;
+    vars["--verde-oscuro"] = mezclar(hex, 0.78, 0);
+    vars["--verde-claro"] = mezclar(hex, 0.12, 255);
+  }
+  if (esHex(fondo)) {
+    vars["--fondo"] = fondo;
+    vars["--fondo-suave"] = mezclar(fondo, 0.95, 0); // un poquito más oscuro, para buscador y relleno
+  }
+  return vars;
 }
 
 export default async function Page() {
@@ -54,12 +66,13 @@ export default async function Page() {
   };
 
   // Color principal elegido en el sistema (si no hay, queda el verde de siempre).
-  const colores = coloresDesde(c.color_principal);
+  const colores = coloresDesde(c.color_principal, c.color_fondo);
   const fotosCategorias = {};
   (catf.data || []).forEach((f) => (fotosCategorias[f.categoria] = f.url));
 
   return (
     <div style={colores}>
+      {esHex(c.color_fondo) && <style>{`html,body{background:${c.color_fondo}}`}</style>}
       <Tienda
         productos={prod.data || []}
         banners={ban.data || []}

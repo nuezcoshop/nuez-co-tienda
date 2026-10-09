@@ -57,6 +57,14 @@ function IconoCarrito({ className = "w-6 h-6" }) {
   );
 }
 
+function IconoMenu() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" className="w-7 h-7">
+      <path d="M4 7h16M4 12h16M4 17h16" />
+    </svg>
+  );
+}
+
 function IconoLupa() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="w-5 h-5">
@@ -75,6 +83,8 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
   const [carritoAbierto, setCarritoAbierto] = useState(false);
   const [detalle, setDetalle] = useState(null); // producto abierto
   const [aviso, setAviso] = useState("");
+  const [vista, setVista] = useState("inicio"); // "inicio" o "tienda"
+  const [menuAbierto, setMenuAbierto] = useState(false);
 
   // Enlaces directos (por ejemplo desde un banner): ?categoria=Granolas, ?buscar=yerba o ?producto=12
   useEffect(() => {
@@ -83,8 +93,14 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
       const cat = sp.get("categoria");
       const bus = sp.get("buscar");
       const prod = sp.get("producto");
-      if (cat) setCategoria(cat);
-      if (bus) setBusqueda(bus);
+      if (cat) {
+        setCategoria(cat);
+        setVista("tienda");
+      }
+      if (bus) {
+        setBusqueda(bus);
+        setVista("tienda");
+      }
       if (prod) {
         const it = items.find((i) => String(i.id) === prod || (i.variantes || []).some((v) => String(v.id) === prod));
         if (it) setDetalle(it);
@@ -123,11 +139,11 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
   }, [carrito, listo]);
 
   useEffect(() => {
-    document.body.style.overflow = carritoAbierto || detalle ? "hidden" : "";
+    document.body.style.overflow = carritoAbierto || detalle || menuAbierto ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
     };
-  }, [carritoAbierto, detalle]);
+  }, [carritoAbierto, detalle, menuAbierto]);
 
   useEffect(() => {
     if (!aviso) return;
@@ -184,7 +200,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
     .sort((a, b) => Number(b.hayStock) - Number(a.hayStock) || a.nombre.localeCompare(b.nombre));
 
   // "Inicio" = sin categoría elegida ni búsqueda. "Todos" muestra el catálogo completo agrupado por categoría.
-  const esInicio = !categoria && !q;
+  const esInicio = vista === "inicio";
   const bannersPrincipal = (banners || []).filter((b) => (b.zona || "principal") === "principal");
   const bannersInicio = (banners || []).filter((b) => b.zona === "inicio");
   const productosDestacados = useMemo(() => {
@@ -210,8 +226,20 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
   function irAInicio() {
     setCategoria("");
     setBusqueda("");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setMenuAbierto(false);
+    setVista("inicio");
+    window.scrollTo({ top: 0 });
   }
+
+  function irATienda() {
+    setCategoria("");
+    setBusqueda("");
+    setMenuAbierto(false);
+    setVista("tienda");
+    window.scrollTo({ top: 0 });
+  }
+
+  const enlaceContacto = config.whatsapp ? `https://wa.me/${config.whatsapp}?text=${encodeURIComponent(`Hola ${config.nombre}! Quería hacerles una consulta.`)}` : "";
 
   let grupos;
   if (categoria && categoria !== TODOS) {
@@ -230,7 +258,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
   }
 
   return (
-    <div className="min-h-screen pb-28 bg-white">
+    <div className="min-h-screen pb-28 bg-[var(--fondo)]">
       {(config.envioGratisDesde > 0 || config.direccion) && (
         <div className="bg-[var(--verde)] text-white text-center text-xs font-medium px-4 py-2">
           {config.envioGratisDesde > 0 ? `Envío gratis en compras desde ${money(config.envioGratisDesde)}` : `Retiro en sucursal: ${config.direccion}`}
@@ -238,10 +266,17 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
       )}
 
       <div className="max-w-5xl mx-auto px-4">
-        <div className="flex items-center justify-between py-3">
-          <button onClick={irAInicio} aria-label="Ir al inicio" className="text-left">
+        <div className="grid grid-cols-[44px_1fr_44px] items-center py-3">
+          <button
+            onClick={() => setMenuAbierto(true)}
+            className="w-11 h-11 rounded-full flex items-center justify-center text-[var(--verde)]"
+            aria-label="Abrir menú"
+          >
+            <IconoMenu />
+          </button>
+          <button onClick={irAInicio} aria-label="Ir al inicio" className="justify-self-center">
             {config.logo ? (
-              <img src={config.logo} alt={config.nombre} className="h-10 w-auto max-w-[200px] object-contain" />
+              <img src={config.logo} alt={config.nombre} className="h-11 w-auto max-w-[200px] object-contain" />
             ) : (
               <h1 className="text-2xl font-extrabold text-[var(--verde)] tracking-tight">{config.nombre}</h1>
             )}
@@ -261,7 +296,8 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
         </div>
       </div>
 
-      <div className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-[var(--borde)]">
+      {!esInicio && (
+      <div className="sticky top-0 z-30 bg-[var(--fondo)] border-b border-[var(--borde)]">
         <div className="max-w-5xl mx-auto px-4 pt-2 pb-2">
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--tinta-suave)]">
@@ -280,24 +316,28 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
           </div>
         </div>
       </div>
+      )}
 
       <main className="max-w-5xl mx-auto px-4">
-        {categorias.length > 0 && (
+        {!esInicio && categorias.length > 0 && (
           <div className="flex gap-3 overflow-x-auto sin-barra mt-3 -mx-4 px-4 pb-1">
-            <CirculoCategoria nombre="Todos" activo={categoria === TODOS} onClick={() => setCategoria(TODOS)} todos />
+            <CirculoCategoria nombre="Todos" activo={!categoria || categoria === TODOS} onClick={() => setCategoria(TODOS)} todos />
             {categorias.map((c) => (
               <CirculoCategoria key={c} nombre={c} foto={fotosCategorias[c]} activo={categoria === c} onClick={() => setCategoria(c)} />
             ))}
           </div>
         )}
 
-        {(bannersPrincipal.length > 0 || esInicio) && (
-          <Banners banners={bannersPrincipal} nombre={config.nombre} bienvenida={config.bienvenida} />
-        )}
+        {esInicio && <Banners banners={bannersPrincipal} nombre={config.nombre} bienvenida={config.bienvenida} grande />}
 
         {esInicio && productosDestacados.length > 0 && (
           <section className="mt-6">
-            <h2 className="text-lg font-bold text-[var(--verde)] mb-3">{config.destacadosTitulo}</h2>
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <h2 className="text-lg font-bold text-[var(--verde)]">{config.destacadosTitulo}</h2>
+              <button onClick={irATienda} className="shrink-0 h-9 px-4 rounded-full bg-[var(--verde)] text-white text-sm font-semibold active:scale-[0.98]">
+                Ir a la tienda →
+              </button>
+            </div>
             <div className="flex gap-3 overflow-x-auto sin-barra snap-x -mx-4 px-4 pb-2">
               {productosDestacados.map((item) => (
                 <div key={item.id} className="w-40 shrink-0 snap-start flex">
@@ -306,6 +346,14 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
               ))}
             </div>
           </section>
+        )}
+
+        {esInicio && productosDestacados.length === 0 && (
+          <div className="mt-6 text-center">
+            <button onClick={irATienda} className="h-12 px-8 rounded-full bg-[var(--verde)] text-white font-semibold">
+              Ir a la tienda →
+            </button>
+          </div>
         )}
 
         {esInicio && bannersInicio.length > 0 && <Banners banners={bannersInicio} sinBienvenida />}
@@ -376,7 +424,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
       </main>
 
       {cantidadLineas > 0 && !carritoAbierto && !detalle && (
-        <div className="fixed bottom-0 inset-x-0 z-40 p-3 bg-gradient-to-t from-white via-white/95 to-transparent">
+        <div className="fixed bottom-0 inset-x-0 z-40 p-3 bg-gradient-to-t from-[var(--fondo)] via-[var(--fondo)] to-transparent">
           <button
             onClick={() => setCarritoAbierto(true)}
             className="max-w-5xl mx-auto w-full h-14 rounded-2xl bg-[var(--verde)] text-white flex items-center justify-between px-5 shadow-lg active:scale-[0.99]"
@@ -392,6 +440,33 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
       {aviso && (
         <div className="fixed top-4 inset-x-0 z-[70] flex justify-center px-4 pointer-events-none">
           <div className="bg-[var(--tinta)] text-white text-sm font-medium rounded-full px-5 py-2.5 shadow-lg">{aviso}</div>
+        </div>
+      )}
+
+      {menuAbierto && (
+        <div className="fixed inset-0 z-[55]" onClick={() => setMenuAbierto(false)}>
+          <div className="absolute inset-0 bg-black/40" />
+          <nav className="absolute left-0 top-0 bottom-0 w-72 max-w-[80%] bg-[var(--fondo)] shadow-xl p-5 flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              {config.logo ? <img src={config.logo} alt={config.nombre} className="h-9 w-auto max-w-[160px] object-contain" /> : <span className="text-xl font-extrabold text-[var(--verde)]">{config.nombre}</span>}
+              <button onClick={() => setMenuAbierto(false)} className="w-10 h-10 rounded-full text-lg" aria-label="Cerrar menú">
+                ✕
+              </button>
+            </div>
+            <button onClick={irAInicio} className="text-left text-lg font-semibold py-4 border-b border-[var(--borde)]">
+              Inicio
+            </button>
+            <button onClick={irATienda} className="text-left text-lg font-semibold py-4 border-b border-[var(--borde)]">
+              Productos
+            </button>
+            {enlaceContacto ? (
+              <a href={enlaceContacto} target="_blank" rel="noopener noreferrer" onClick={() => setMenuAbierto(false)} className="text-lg font-semibold py-4 border-b border-[var(--borde)] flex items-center justify-between">
+                Contacto <span className="text-sm font-normal text-[var(--tinta-suave)]">WhatsApp</span>
+              </a>
+            ) : (
+              <span className="text-lg font-semibold py-4 border-b border-[var(--borde)] opacity-50">Contacto</span>
+            )}
+          </nav>
         </div>
       )}
 
@@ -443,7 +518,7 @@ function CirculoCategoria({ nombre, foto, activo, onClick, todos }) {
   );
 }
 
-function Banners({ banners, nombre, bienvenida, sinBienvenida }) {
+function Banners({ banners, nombre, bienvenida, sinBienvenida, grande }) {
   const contenedor = useRef(null);
   const [actual, setActual] = useState(0);
 
@@ -486,7 +561,7 @@ function Banners({ banners, nombre, bienvenida, sinBienvenida }) {
             />
           );
           return (
-            <div key={b.id} className="snap-center shrink-0 w-full aspect-[12/5] bg-[var(--fondo-suave)]">
+            <div key={b.id} className={`snap-center shrink-0 w-full bg-[var(--fondo-suave)] ${grande ? "aspect-[4/5] md:aspect-[16/9]" : "aspect-[12/5]"}`}>
               {b.enlace ? (
                 <a
                   href={normalizarEnlace(b.enlace)}
