@@ -31,3 +31,8 @@ body {
 .sin-barra::-webkit-scrollbar {
   display: none;
 }
+
+.linea-menu {
+  border-bottom: 1px solid var(--verde);
+  border-bottom-color: color-mix(in srgb, var(--verde) 25%, transparent);
+}

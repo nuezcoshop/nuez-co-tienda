@@ -59,6 +59,7 @@ export default async function Page() {
     destacadosTitulo: c.destacados_titulo || "Novedades",
     ubicacionLink: c.ubicacion_link || "",
     zonasEnvio: Array.isArray(c.zonas_envio) ? c.zonas_envio : [],
+    categoriasOrden: Array.isArray(c.categorias_orden) ? c.categorias_orden.map(String) : [],
     nosotros: {
       activo: !!c.nosotros_activo,
       titulo: c.nosotros_titulo || "Nuestra historia",

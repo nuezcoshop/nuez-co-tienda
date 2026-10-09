@@ -192,11 +192,22 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
   const total = lineas.reduce((a, l) => a + l.subtotal, 0);
   const cantidadLineas = lineas.length;
 
+  // Orden de categorías: primero las que se eligieron en el sistema (en ese orden), después el resto de la A a la Z.
+  const ordenElegido = config.categoriasOrden || [];
+  function compararCategorias(a, b) {
+    const ia = ordenElegido.indexOf(a);
+    const ib = ordenElegido.indexOf(b);
+    if (ia >= 0 && ib >= 0) return ia - ib;
+    if (ia >= 0) return -1;
+    if (ib >= 0) return 1;
+    return a.localeCompare(b);
+  }
+
   const categorias = useMemo(() => {
     const set = new Set();
     items.forEach((i) => i.categoria && set.add(i.categoria));
-    return [...set].sort((a, b) => a.localeCompare(b));
-  }, [items]);
+    return [...set].sort(compararCategorias);
+  }, [items, config.categoriasOrden]);
 
   const q = normalizarTexto(busqueda).trim();
   const palabras = q ? q.split(/\s+/) : [];
@@ -292,7 +303,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
       (mapa[k] = mapa[k] || []).push(i);
     });
     grupos = Object.entries(mapa)
-      .sort(([a], [b]) => (a === "Otros" ? 1 : b === "Otros" ? -1 : a.localeCompare(b)))
+      .sort(([a], [b]) => (a === "Otros" ? 1 : b === "Otros" ? -1 : compararCategorias(a, b)))
       .map(([titulo, its]) => ({ titulo, items: its }));
   }
 
@@ -339,7 +350,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
       <div className="sticky top-0 z-30 bg-[var(--fondo)]">
         <div className="max-w-5xl mx-auto px-4 pt-2 pb-2">
           <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--tinta-suave)]">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--verde)]">
               <IconoLupa />
             </span>
             <input
@@ -350,7 +361,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
               placeholder="Buscar productos…"
-              className="w-full h-11 pl-11 pr-4 rounded-full bg-[var(--fondo-suave)] outline-none focus:ring-2 focus:ring-[var(--verde)]/30 text-base"
+              className="w-full h-12 pl-12 pr-4 rounded-full bg-transparent border-2 border-[var(--verde)] text-[var(--verde)] font-semibold placeholder:text-[var(--verde)] placeholder:opacity-70 placeholder:font-medium outline-none text-base"
             />
           </div>
         </div>
@@ -359,10 +370,10 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
 
       <main className="max-w-5xl mx-auto px-4">
         {!esInicio && categorias.length > 0 && (
-          <div className="flex gap-3 overflow-x-auto sin-barra mt-3 -mx-4 px-4 pb-1">
-            <CirculoCategoria nombre="Todos" activo={!categoria || categoria === TODOS} onClick={() => setCategoria(TODOS)} todos />
+          <div className="flex gap-2.5 overflow-x-auto sin-barra mt-3 -mx-4 px-4 pb-1">
+            <CirculoCategoria nombre="Todos" activo={!categoria || categoria === TODOS} onClick={() => setCategoria(TODOS)} />
             {categorias.map((c) => (
-              <CirculoCategoria key={c} nombre={c} foto={fotosCategorias[c]} activo={categoria === c} onClick={() => setCategoria(c)} />
+              <CirculoCategoria key={c} nombre={c} activo={categoria === c} onClick={() => setCategoria(c)} />
             ))}
           </div>
         )}
@@ -480,18 +491,18 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
                 ✕
               </button>
             </div>
-            <button onClick={irAInicio} className="text-left text-lg font-semibold py-4 border-b border-[var(--verde)]/20 text-[var(--verde)]">
+            <button onClick={irAInicio} className="text-left text-lg font-semibold py-4 linea-menu text-[var(--verde)]">
               Inicio
             </button>
-            <button onClick={irATienda} className="text-left text-lg font-semibold py-4 border-b border-[var(--verde)]/20 text-[var(--verde)]">
+            <button onClick={irATienda} className="text-left text-lg font-semibold py-4 linea-menu text-[var(--verde)]">
               Productos
             </button>
             {enlaceContacto ? (
-              <a href={enlaceContacto} target="_blank" rel="noopener noreferrer" onClick={() => setMenuAbierto(false)} className="text-lg font-semibold py-4 border-b border-[var(--verde)]/20 text-[var(--verde)]">
+              <a href={enlaceContacto} target="_blank" rel="noopener noreferrer" onClick={() => setMenuAbierto(false)} className="text-lg font-semibold py-4 linea-menu text-[var(--verde)]">
                 Contactanos por WhatsApp
               </a>
             ) : (
-              <span className="text-lg font-semibold py-4 border-b border-[var(--verde)]/20 text-[var(--verde)] opacity-50">Contactanos por WhatsApp</span>
+              <span className="text-lg font-semibold py-4 linea-menu text-[var(--verde)] opacity-50">Contactanos por WhatsApp</span>
             )}
           </nav>
         </div>
@@ -553,21 +564,20 @@ function Nosotros({ datos }) {
   );
 }
 
-function CirculoCategoria({ nombre, foto, activo, onClick, todos }) {
+function CirculoCategoria({ nombre, activo, onClick }) {
   const ref = useRef(null);
   useEffect(() => {
     if (activo && ref.current) ref.current.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
   }, [activo]);
   return (
-    <button ref={ref} onClick={onClick} className="shrink-0 w-[72px] flex flex-col items-center gap-1.5">
-      <span
-        className={`w-16 h-16 rounded-full overflow-hidden flex items-center justify-center text-xl font-bold border-2 transition-colors ${
-          activo ? "border-[var(--verde)]" : "border-transparent"
-        } ${foto ? "bg-[var(--fondo-suave)]" : "bg-[var(--verde-claro)] text-[var(--verde)]"}`}
-      >
-        {foto ? <img src={foto} alt="" loading="lazy" className="w-full h-full object-cover" /> : todos ? "★" : nombre.charAt(0).toUpperCase()}
-      </span>
-      <span className={`text-[11px] leading-tight text-center line-clamp-2 text-[var(--verde)] ${activo ? "font-bold" : "font-medium"}`}>{nombre}</span>
+    <button
+      ref={ref}
+      onClick={onClick}
+      className={`shrink-0 h-11 px-5 rounded-full border-2 border-[var(--verde)] font-extrabold text-[15px] whitespace-nowrap transition-colors ${
+        activo ? "bg-[var(--verde)] text-[var(--fondo)]" : "bg-transparent text-[var(--verde)]"
+      }`}
+    >
+      {nombre}
     </button>
   );
 }
