@@ -668,7 +668,7 @@ function Tarjeta({ item, carrito, abrir }) {
     <button
       onClick={item.hayStock ? abrir : undefined}
       disabled={!item.hayStock}
-      className={`text-left bg-transparent rounded-3xl border-2 border-[var(--verde)] overflow-hidden flex flex-col active:scale-[0.99] transition-transform ${item.hayStock ? "" : "opacity-60"}`}
+      className={`text-left bg-transparent rounded-3xl border border-[var(--verde)] overflow-hidden flex flex-col active:scale-[0.99] transition-transform ${item.hayStock ? "" : "opacity-60"}`}
     >
       <div className="aspect-square bg-white relative">
         {item.foto_url ? (
@@ -684,12 +684,12 @@ function Tarjeta({ item, carrito, abrir }) {
           <span className="absolute top-2 right-2 w-6 h-6 rounded-full bg-[var(--verde)] text-white text-xs flex items-center justify-center">✓</span>
         )}
       </div>
-      <div className="p-3 flex flex-col gap-1 flex-1 text-[var(--verde)] border-t-2 border-[var(--verde)]">
+      <div className="p-3 flex flex-col gap-1 flex-1 text-[var(--verde)] border-t border-[var(--verde)]">
         <p className="text-[15px] font-extrabold leading-snug line-clamp-2 min-h-[2.5rem]">{item.nombre}</p>
         <div className="flex items-center justify-between mt-1">
-          <p className="font-extrabold text-[15px]">{precioTexto}</p>
+          <p className="font-medium text-[15px]">{precioTexto}</p>
           {item.hayStock && (
-            <span className="w-9 h-9 rounded-full border-2 border-[var(--verde)] text-[var(--verde)] text-xl font-bold flex items-center justify-center">+</span>
+            <span className="w-9 h-9 rounded-full border border-[var(--verde)] text-[var(--verde)] text-xl font-light flex items-center justify-center">+</span>
           )}
         </div>
       </div>
