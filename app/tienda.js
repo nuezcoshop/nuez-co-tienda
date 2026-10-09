@@ -310,8 +310,19 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
   return (
     <div className="min-h-screen pb-28 bg-[var(--fondo)]">
       {(config.envioGratisDesde > 0 || config.direccion) && (
-        <div className="bg-[var(--verde)] text-white text-center text-xs font-medium px-4 py-2">
-          {config.envioGratisDesde > 0 ? `Envío gratis en compras desde ${money(config.envioGratisDesde)}` : `Retiro en sucursal: ${config.direccion}`}
+        <div className="bg-[var(--verde)] text-white text-xs font-medium py-2 overflow-hidden whitespace-nowrap">
+          <div className="cinta-pista">
+            {[0, 1].map((k) => (
+              <div key={k} className="cinta-grupo" aria-hidden={k === 1 ? "true" : undefined}>
+                {[0, 1, 2, 3].map((n) => (
+                  <span key={n} className="px-6">
+                    {config.envioGratisDesde > 0 ? `Envío gratis en compras desde ${money(config.envioGratisDesde)}` : `Retiro en sucursal: ${config.direccion}`}
+                    <span className="mx-6 opacity-60">•</span>
+                  </span>
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -338,7 +349,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
           >
             <IconoCarrito className="w-7 h-7" />
             {cantidadLineas > 0 && (
-              <span className="absolute top-0 -right-1 min-w-[20px] h-5 px-1 rounded-full bg-[var(--acento)] text-[var(--sobre-acento)] text-xs font-bold flex items-center justify-center">
+              <span key={cantidadLineas} className="salto absolute top-0 -right-1 min-w-[20px] h-5 px-1 rounded-full bg-[var(--acento)] text-[var(--sobre-acento)] text-xs font-bold flex items-center justify-center">
                 {cantidadLineas}
               </span>
             )}
@@ -381,20 +392,20 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
         {esInicio && <Banners banners={bannersPrincipal} nombre={config.nombre} bienvenida={config.bienvenida} grande onEnlace={abrirEnlace} />}
 
         {esInicio && productosDestacados.length > 0 && (
-          <section className="mt-6">
+          <section className="mt-6 rev">
             <div className="flex items-center justify-between gap-3 mb-3">
               <h2 className="text-lg font-bold text-[var(--verde)]">{config.destacadosTitulo}</h2>
-              <button onClick={irATienda} className="shrink-0 h-9 px-4 rounded-full border-2 border-[var(--verde)] bg-[var(--acento)] text-[var(--sobre-acento)] text-sm font-semibold active:scale-[0.98]">
+              <button onClick={irATienda} className="shrink-0 h-9 px-4 rounded-full border-2 border-[var(--verde)] bg-[var(--acento)] text-[var(--sobre-acento)] text-sm font-semibold active:scale-[0.93] transition-transform">
                 Ir a la tienda →
               </button>
             </div>
-            <div className="flex gap-3 overflow-x-auto sin-barra snap-x -mx-4 px-4 pb-2">
+            <CarruselAuto>
               {productosDestacados.map((item) => (
                 <div key={item.id} className="w-40 shrink-0 snap-start flex">
                   <Tarjeta item={item} carrito={carrito} abrir={() => setDetalle(item)} />
                 </div>
               ))}
-            </div>
+            </CarruselAuto>
           </section>
         )}
 
@@ -406,14 +417,14 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
           </div>
         )}
 
-        {esInicio && bannersInicio.length > 0 && <Banners banners={bannersInicio} sinBienvenida onEnlace={abrirEnlace} />}
+        {esInicio && bannersInicio.length > 0 && <div className="rev"><Banners banners={bannersInicio} sinBienvenida onEnlace={abrirEnlace} /></div>}
 
         {esInicio && config.nosotros && config.nosotros.activo && (config.nosotros.texto || config.nosotros.foto || config.nosotros.subtitulo) && (
           <Nosotros datos={config.nosotros} />
         )}
 
         {esInicio && (config.direccion || config.horario || enlaceUbicacion) && (
-          <section className="mt-6 rounded-2xl bg-[var(--fondo-suave)] p-5">
+          <section className="mt-6 rounded-2xl bg-[var(--fondo-suave)] p-5 rev">
             <h2 className="text-lg font-bold text-[var(--verde)] mb-2">Visitanos</h2>
             {config.direccion && <p className="text-sm font-semibold text-[var(--verde)]">{config.direccion}</p>}
             {config.horario && <p className="text-sm text-[var(--verde)] opacity-80 mt-1">{config.horario}</p>}
@@ -441,8 +452,10 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
             <section key={g.titulo} className="mt-6">
               <h2 className="text-lg font-bold text-[var(--verde)] mb-3">{g.titulo}</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                {g.items.map((item) => (
-                  <Tarjeta key={item.id} item={item} carrito={carrito} abrir={() => setDetalle(item)} />
+                {g.items.map((item, i) => (
+                  <div key={item.id} className="casc flex" style={{ animationDelay: `${Math.min(i, 8) * 60}ms` }}>
+                    <Tarjeta item={item} carrito={carrito} abrir={() => setDetalle(item)} />
+                  </div>
                 ))}
               </div>
             </section>
@@ -483,8 +496,8 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
 
       {menuAbierto && (
         <div className="fixed inset-0 z-[55]" onClick={() => setMenuAbierto(false)}>
-          <div className="absolute inset-0 bg-black/40" />
-          <nav className="absolute left-0 top-0 bottom-0 w-72 max-w-[80%] bg-[var(--fondo)] shadow-xl p-5 flex flex-col" onClick={(e) => e.stopPropagation()}>
+          <div className="absolute inset-0 bg-black/40 fundir" />
+          <nav className="deslizar-izq absolute left-0 top-0 bottom-0 w-72 max-w-[80%] bg-[var(--fondo)] shadow-xl p-5 flex flex-col" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               {config.logo ? <img src={config.logo} alt={config.nombre} className="h-9 w-auto max-w-[160px] object-contain" /> : <span className="text-xl font-extrabold text-[var(--verde)]">{config.nombre}</span>}
               <button onClick={() => setMenuAbierto(false)} className="w-10 h-10 rounded-full text-lg text-[var(--verde)]" aria-label="Cerrar menú">
@@ -541,14 +554,16 @@ function Nosotros({ datos }) {
   const [abierto, setAbierto] = useState(false);
   const largo = (datos.texto || "").length > 140 || (datos.texto || "").includes("\n");
   return (
-    <section className="mt-6">
+    <section className="mt-6 rev">
       <h2 className="text-lg font-bold text-[var(--verde)] mb-3">{datos.titulo}</h2>
       <div className="rounded-2xl overflow-hidden bg-[var(--fondo-suave)]">
         {datos.foto && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={datos.foto} alt={datos.subtitulo || datos.titulo} loading="lazy" decoding="async" className="w-full max-h-80 object-cover" />
+          <div className="overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={datos.foto} alt={datos.subtitulo || datos.titulo} loading="lazy" decoding="async" className="zoom-lento w-full max-h-80 object-cover" />
+          </div>
         )}
-        <div className="p-5 text-[var(--verde)]">
+        <div className="p-5 text-[var(--verde)] rev">
           {datos.subtitulo && <h3 className="text-xl font-extrabold leading-snug">{datos.subtitulo}</h3>}
           {datos.texto && (
             <p className={`text-sm mt-2 leading-relaxed whitespace-pre-line opacity-90 ${abierto ? "" : "line-clamp-3"}`}>{datos.texto}</p>
@@ -585,12 +600,13 @@ function CirculoCategoria({ nombre, activo, onClick }) {
 function Banners({ banners, nombre, bienvenida, sinBienvenida, grande, onEnlace }) {
   const contenedor = useRef(null);
   const [actual, setActual] = useState(0);
+  const pausaHasta = useRef(0);
 
   useEffect(() => {
     if (!banners || banners.length < 2) return;
     const t = setInterval(() => {
       const el = contenedor.current;
-      if (!el) return;
+      if (!el || Date.now() < pausaHasta.current) return;
       const siguiente = (Math.round(el.scrollLeft / el.clientWidth) + 1) % banners.length;
       el.scrollTo({ left: siguiente * el.clientWidth, behavior: "smooth" });
     }, 5000);
@@ -612,7 +628,8 @@ function Banners({ banners, nombre, bienvenida, sinBienvenida, grande, onEnlace 
       <div
         ref={contenedor}
         onScroll={(e) => setActual(Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth))}
-        className="flex overflow-x-auto snap-x snap-mandatory sin-barra rounded-2xl"
+        onTouchStart={() => (pausaHasta.current = Date.now() + 8000)}
+        className={`flex overflow-x-auto snap-x snap-mandatory sin-barra rounded-2xl ${grande ? "encoge" : ""}`}
       >
         {banners.map((b, idx) => {
           const imagen = (
@@ -654,6 +671,48 @@ function Banners({ banners, nombre, bienvenida, sinBienvenida, grande, onEnlace 
   );
 }
 
+// Carrusel de favoritos: avanza solo, se detiene unos segundos en cada producto y se frena si la persona lo toca.
+function CarruselAuto({ children }) {
+  const ref = useRef(null);
+  const pausaHasta = useRef(0);
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const t = setInterval(() => {
+      const el = ref.current;
+      if (!el || document.hidden || Date.now() < pausaHasta.current) return;
+      const hijos = el.children;
+      if (hijos.length < 2) return;
+      const finalAlcanzado = el.scrollLeft + el.clientWidth >= el.scrollWidth - 4;
+      if (finalAlcanzado) {
+        el.scrollTo({ left: 0, behavior: "smooth" });
+        return;
+      }
+      let siguiente = 0;
+      for (let i = 0; i < hijos.length; i++) {
+        if (hijos[i].offsetLeft - hijos[0].offsetLeft > el.scrollLeft + 4) {
+          siguiente = hijos[i].offsetLeft - hijos[0].offsetLeft;
+          break;
+        }
+      }
+      el.scrollTo({ left: siguiente, behavior: "smooth" });
+    }, 3500);
+    return () => clearInterval(t);
+  }, []);
+  const frenar = () => (pausaHasta.current = Date.now() + 10000);
+  return (
+    <div
+      ref={ref}
+      onTouchStart={frenar}
+      onPointerDown={frenar}
+      onWheel={frenar}
+      onMouseEnter={frenar}
+      className="flex gap-3 overflow-x-auto sin-barra snap-x -mx-4 px-4 pb-2"
+    >
+      {children}
+    </div>
+  );
+}
+
 function Tarjeta({ item, carrito, abrir }) {
   const tieneTramos = (item.tramos || []).length > 0;
   const opciones = item.tipo === "variantes" ? item.variantes : [item];
@@ -668,7 +727,7 @@ function Tarjeta({ item, carrito, abrir }) {
     <button
       onClick={item.hayStock ? abrir : undefined}
       disabled={!item.hayStock}
-      className={`text-left bg-transparent rounded-3xl border border-[var(--verde)] overflow-hidden flex flex-col active:scale-[0.99] transition-transform ${item.hayStock ? "" : "opacity-60"}`}
+      className={`text-left bg-transparent rounded-3xl border border-[var(--verde)] overflow-hidden flex flex-col w-full active:scale-[0.97] transition-transform ${item.hayStock ? "" : "opacity-60"}`}
     >
       <div className="aspect-square bg-white relative">
         {item.foto_url ? (
@@ -746,8 +805,8 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
   const mostrar = (p) => (esPeso ? money(p / 10) : money(p));
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center" onClick={cerrar}>
-      <div className="bg-white w-full sm:max-w-md max-h-[94vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl" onClick={(e) => e.stopPropagation()}>
+    <div className="fundir fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center" onClick={cerrar}>
+      <div className="subir bg-white w-full sm:max-w-md max-h-[94vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl" onClick={(e) => e.stopPropagation()}>
         <div className="relative aspect-[4/3] bg-[var(--fondo-suave)]">
           {item.foto_url ? (
             <img src={item.foto_url} alt={item.nombre} decoding="async" className="w-full h-full object-cover" />
@@ -1055,8 +1114,8 @@ function Pedido({ lineas, total, config, agregar, quitar, vaciar, cerrar }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center" onClick={cerrar}>
-      <div className="bg-white w-full sm:max-w-lg max-h-[94vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl" onClick={(e) => e.stopPropagation()}>
+    <div className="fundir fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center" onClick={cerrar}>
+      <div className="subir bg-white w-full sm:max-w-lg max-h-[94vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl" onClick={(e) => e.stopPropagation()}>
         <div className="sticky top-0 bg-white flex items-center justify-between px-5 pt-4 pb-3 border-b border-[var(--borde)] z-10">
           <h2 className="text-xl font-bold text-[var(--verde)]">Tu pedido</h2>
           <button onClick={cerrar} className="w-10 h-10 text-xl text-[var(--tinta-suave)]" aria-label="Cerrar">
