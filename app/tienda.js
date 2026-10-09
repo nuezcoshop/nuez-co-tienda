@@ -668,9 +668,9 @@ function Tarjeta({ item, carrito, abrir }) {
     <button
       onClick={item.hayStock ? abrir : undefined}
       disabled={!item.hayStock}
-      className={`text-left bg-white rounded-2xl border border-[var(--borde)] shadow-sm overflow-hidden flex flex-col active:scale-[0.99] transition-transform ${item.hayStock ? "" : "opacity-60"}`}
+      className={`text-left bg-transparent rounded-3xl border-2 border-[var(--verde)] overflow-hidden flex flex-col active:scale-[0.99] transition-transform ${item.hayStock ? "" : "opacity-60"}`}
     >
-      <div className="aspect-square bg-[var(--fondo-suave)] relative">
+      <div className="aspect-square bg-white relative">
         {item.foto_url ? (
           <img src={item.foto_url} alt={item.nombre} loading="lazy" decoding="async" className="w-full h-full object-cover" />
         ) : (
@@ -684,13 +684,12 @@ function Tarjeta({ item, carrito, abrir }) {
           <span className="absolute top-2 right-2 w-6 h-6 rounded-full bg-[var(--verde)] text-white text-xs flex items-center justify-center">✓</span>
         )}
       </div>
-      <div className="p-3 flex flex-col gap-1 flex-1">
-        {item.categoria && <p className="text-[11px] font-medium text-[var(--tinta-suave)] uppercase tracking-wide truncate">{item.categoria}</p>}
-        <p className="text-sm font-semibold leading-snug line-clamp-2 min-h-[2.5rem]">{item.nombre}</p>
+      <div className="p-3 flex flex-col gap-1 flex-1 text-[var(--verde)] border-t-2 border-[var(--verde)]">
+        <p className="text-[15px] font-extrabold leading-snug line-clamp-2 min-h-[2.5rem]">{item.nombre}</p>
         <div className="flex items-center justify-between mt-1">
-          <p className="text-[var(--verde)] font-bold">{precioTexto}</p>
+          <p className="font-extrabold text-[15px]">{precioTexto}</p>
           {item.hayStock && (
-            <span className="w-9 h-9 rounded-full bg-[var(--verde-claro)] text-[var(--verde)] text-xl font-semibold flex items-center justify-center">+</span>
+            <span className="w-9 h-9 rounded-full border-2 border-[var(--verde)] text-[var(--verde)] text-xl font-bold flex items-center justify-center">+</span>
           )}
         </div>
       </div>
