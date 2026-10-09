@@ -310,6 +310,22 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
 
         {esInicio && bannersInicio.length > 0 && <Banners banners={bannersInicio} sinBienvenida />}
 
+        {esInicio && config.nosotros && config.nosotros.activo && (config.nosotros.texto || config.nosotros.foto || config.nosotros.subtitulo) && (
+          <section className="mt-6">
+            <h2 className="text-lg font-bold text-[var(--verde)] mb-3">{config.nosotros.titulo}</h2>
+            <div className="rounded-2xl overflow-hidden border border-[var(--borde)] bg-white">
+              {config.nosotros.foto && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={config.nosotros.foto} alt={config.nosotros.subtitulo || config.nosotros.titulo} loading="lazy" decoding="async" className="w-full max-h-80 object-cover" />
+              )}
+              <div className="p-5">
+                {config.nosotros.subtitulo && <h3 className="text-xl font-extrabold leading-snug">{config.nosotros.subtitulo}</h3>}
+                {config.nosotros.texto && <p className="text-sm text-[var(--tinta-suave)] mt-2 leading-relaxed whitespace-pre-line">{config.nosotros.texto}</p>}
+              </div>
+            </div>
+          </section>
+        )}
+
         {esInicio && (config.direccion || config.horario || enlaceUbicacion) && (
           <section className="mt-6 rounded-2xl bg-[var(--fondo-suave)] p-5">
             <h2 className="text-lg font-bold text-[var(--verde)] mb-2">Visitanos</h2>

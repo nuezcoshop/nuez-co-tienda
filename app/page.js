@@ -44,6 +44,13 @@ export default async function Page() {
     destacadosTitulo: c.destacados_titulo || "Novedades",
     ubicacionLink: c.ubicacion_link || "",
     zonasEnvio: Array.isArray(c.zonas_envio) ? c.zonas_envio : [],
+    nosotros: {
+      activo: !!c.nosotros_activo,
+      titulo: c.nosotros_titulo || "Nuestra historia",
+      subtitulo: c.nosotros_subtitulo || "",
+      texto: c.nosotros_texto || "",
+      foto: c.nosotros_foto || "",
+    },
   };
 
   // Color principal elegido en el sistema (si no hay, queda el verde de siempre).
