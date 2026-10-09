@@ -609,7 +609,7 @@ function Banners({ banners, nombre, bienvenida, sinBienvenida, grande, onEnlace 
       if (!el || Date.now() < pausaHasta.current) return;
       const siguiente = (Math.round(el.scrollLeft / el.clientWidth) + 1) % banners.length;
       el.scrollTo({ left: siguiente * el.clientWidth, behavior: "smooth" });
-    }, 5000);
+    }, 3200);
     return () => clearInterval(t);
   }, [banners]);
 
@@ -628,7 +628,7 @@ function Banners({ banners, nombre, bienvenida, sinBienvenida, grande, onEnlace 
       <div
         ref={contenedor}
         onScroll={(e) => setActual(Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth))}
-        onTouchStart={() => (pausaHasta.current = Date.now() + 8000)}
+        onTouchStart={() => (pausaHasta.current = Date.now() + 6000)}
         className={`flex overflow-x-auto snap-x snap-mandatory sin-barra rounded-2xl ${grande ? "encoge" : ""}`}
       >
         {banners.map((b, idx) => {
