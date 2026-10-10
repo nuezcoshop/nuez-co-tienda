@@ -741,7 +741,7 @@ function CarruselFavoritos({ items, carrito, abrir }) {
 
   useEffect(() => {
     if (m < 2) return;
-    if (typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    // Avanza siempre (también con el ahorro de batería / "quitar animaciones" del celular): es un movimiento suave y corto.
     const t = setInterval(() => {
       if (document.hidden || Date.now() < pausaHasta.current) return;
       setIndice((i) => (i + 1) % m);
@@ -749,7 +749,7 @@ function CarruselFavoritos({ items, carrito, abrir }) {
     return () => clearInterval(t);
   }, [m]);
 
-  const frenar = () => (pausaHasta.current = Date.now() + 8000);
+  const frenar = () => (pausaHasta.current = Date.now() + 6000);
   const mover = (delta) => setIndice((i) => (i + delta + m) % m);
 
   if (m === 1) {
@@ -765,8 +765,8 @@ function CarruselFavoritos({ items, carrito, abrir }) {
   return (
     <div
       className="relative -mx-4 overflow-hidden py-5"
-      onMouseEnter={frenar}
-      onMouseMove={frenar}
+      onPointerEnter={(e) => e.pointerType === "mouse" && frenar()}
+      onPointerMove={(e) => e.pointerType === "mouse" && frenar()}
       onTouchStart={(e) => {
         frenar();
         inicioX.current = e.touches[0].clientX;
@@ -800,7 +800,8 @@ function CarruselFavoritos({ items, carrito, abrir }) {
               opacity: visible ? (centro ? 1 : 0.85) : 0,
               zIndex: 10 - Math.abs(d),
               pointerEvents: visible ? "auto" : "none",
-              transition: "transform 0.55s cubic-bezier(0.22, 0.8, 0.3, 1), opacity 0.4s ease",
+              transition: "transform 0.6s cubic-bezier(0.22, 0.8, 0.3, 1), opacity 0.45s ease",
+              willChange: "transform, opacity",
             }}
           >
             <Tarjeta item={item} carrito={carrito} abrir={() => (centro ? abrir(item) : (frenar(), setIndice(i)))} />
