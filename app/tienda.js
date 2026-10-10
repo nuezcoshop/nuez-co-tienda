@@ -1190,6 +1190,9 @@ function Pedido({ lineas, total, config, agregar, quitar, vaciar, cerrar }) {
                   <p className="text-xs text-[var(--tinta-suave)] mt-0.5">
                     {esKg ? formatoCantidad(l.cantidad, "kg") : `${l.cantidad} un.`} · {esKg ? por100(l.precio) : money(l.precio) + " c/u"}
                   </p>
+                  <button onClick={() => quitar(l.id)} className="text-xs text-[var(--tinta-suave)] underline mt-1 py-1" aria-label={`Eliminar ${l.row.nombre}`}>
+                    Eliminar
+                  </button>
                 </div>
                 <div className="flex items-center rounded-xl border border-[var(--borde)]">
                   <button
