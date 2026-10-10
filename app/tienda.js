@@ -761,6 +761,8 @@ function Tarjeta({ item, carrito, abrir }) {
   const tieneTramos = (item.tramos || []).length > 0;
   const opciones = item.tipo === "variantes" ? item.variantes : [item];
   const enCarrito = opciones.some((o) => carrito[o.id] > 0);
+  const etiqueta = item.etiqueta || (opciones.find((o) => o.etiqueta) || {}).etiqueta;
+  const abajo = etiqueta ? "top-10" : "top-2";
 
   let precioTexto = "";
   if (item.tipo === "variantes") precioTexto = "Desde " + money(Math.min(...item.variantes.map((v) => v.precio_venta)));
@@ -779,9 +781,12 @@ function Tarjeta({ item, carrito, abrir }) {
         ) : (
           <div className="w-full h-full flex items-center justify-center text-4xl">🌰</div>
         )}
-        {!item.hayStock && <span className="absolute top-2 left-2 text-[11px] font-semibold bg-[var(--tinta)] text-white px-2 py-1 rounded-full">Agotado</span>}
+        {etiqueta && (
+          <span className="absolute top-2 left-2 text-xs font-extrabold bg-[var(--verde)] text-[var(--fondo)] px-3 py-1 rounded-full">{etiqueta}</span>
+        )}
+        {!item.hayStock && <span className={`absolute ${abajo} left-2 text-[11px] font-semibold bg-[var(--tinta)] text-white px-2 py-1 rounded-full`}>Agotado</span>}
         {item.hayStock && tieneTramos && (
-          <span className="absolute top-2 left-2 text-[11px] font-semibold bg-[var(--amarillo)] text-[var(--tinta)] px-2 py-1 rounded-full">Precio por cantidad</span>
+          <span className={`absolute ${abajo} left-2 text-[11px] font-semibold bg-[var(--amarillo)] text-[var(--tinta)] px-2 py-1 rounded-full`}>Precio por cantidad</span>
         )}
         {enCarrito && (
           <span className="absolute top-2 right-2 w-6 h-6 rounded-full bg-[var(--acento)] text-[var(--sobre-acento)] text-xs flex items-center justify-center">✓</span>
