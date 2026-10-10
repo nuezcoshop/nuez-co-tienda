@@ -289,6 +289,11 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
     window.scrollTo({ top: 0 });
   }
 
+  const enlaceInstagram = config.instagram
+    ? /^https?:\/\//i.test(config.instagram.trim())
+      ? config.instagram.trim()
+      : `https://instagram.com/${config.instagram.trim().replace(/^@/, "").replace(/^(www\.)?instagram\.com\//i, "")}`
+    : "";
   const enlaceContacto = config.whatsapp ? `https://wa.me/${config.whatsapp}?text=${encodeURIComponent(`Hola ${config.nombre}! Quería hacerles una consulta.`)}` : "";
 
   let grupos;
@@ -417,20 +422,44 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
           <Nosotros datos={config.nosotros} />
         )}
 
-        {esInicio && (config.direccion || config.horario || enlaceUbicacion) && (
-          <section className="mt-6 rounded-2xl bg-[var(--fondo-suave)] p-5 rev">
-            <h2 className="text-lg font-bold text-[var(--verde)] mb-2">Visitanos</h2>
-            {config.direccion && <p className="text-sm font-semibold text-[var(--verde)]">{config.direccion}</p>}
-            {config.horario && <p className="text-sm text-[var(--verde)] opacity-80 mt-1">{config.horario}</p>}
+        {esInicio && (config.direccion || enlaceUbicacion || enlaceContacto || enlaceInstagram) && (
+          <section className="mt-10 text-center text-[var(--verde)] rev">
+            <h2 className="text-xl font-extrabold">Visitá nuestra tienda</h2>
+            {config.direccion && <p className="text-base font-semibold mt-1">{config.direccion}</p>}
             {enlaceUbicacion && (
               <a
                 href={enlaceUbicacion}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-3 inline-flex items-center h-11 px-5 rounded-full bg-[var(--acento)] text-[var(--sobre-acento)] text-sm font-semibold"
+                className="mt-4 inline-flex items-center gap-2 h-11 px-5 rounded-full border-2 border-[var(--verde)] bg-[var(--acento)] text-[var(--sobre-acento)] text-sm font-semibold active:scale-[0.93] transition-transform"
               >
-                📍 Cómo llegar
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                  <circle cx="12" cy="10" r="3" />
+                </svg>
+                Cómo llegar
               </a>
+            )}
+            {(enlaceInstagram || enlaceContacto) && (
+              <div className="mt-5 flex items-center justify-center gap-5">
+                {enlaceInstagram && (
+                  <a href={enlaceInstagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="active:scale-90 transition-transform">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <rect x="2" y="2" width="20" height="20" rx="5" />
+                      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+                    </svg>
+                  </a>
+                )}
+                {enlaceContacto && (
+                  <a href={enlaceContacto} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" className="active:scale-90 transition-transform">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21" />
+                      <path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1" />
+                    </svg>
+                  </a>
+                )}
+              </div>
             )}
           </section>
         )}
@@ -472,7 +501,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
           ) : (
             <span className="text-5xl font-extrabold text-[var(--verde)]">{config.nombre}</span>
           )}
-          <span className="mt-3 text-sm font-semibold tracking-[0.3em] text-[var(--verde)]">{new Date().getFullYear()}</span>
+          <span className="mt-3 text-sm font-semibold tracking-[0.1em] text-[var(--verde)]">© {new Date().getFullYear()} Nuez Co</span>
         </div>
       </main>
 

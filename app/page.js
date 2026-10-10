@@ -60,6 +60,7 @@ export default async function Page() {
         ? Number(c.envio_gratis_desde) || 0
         : Number(process.env.NEXT_PUBLIC_ENVIO_GRATIS_DESDE) || 0,
     bienvenida: c.bienvenida || "",
+    instagram: c.instagram || "",
     logo: c.logo_url || "",
     sucursal:
       c.sucursal_lat !== null && c.sucursal_lat !== undefined && c.sucursal_lng !== null && c.sucursal_lng !== undefined
