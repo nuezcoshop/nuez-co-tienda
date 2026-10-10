@@ -1160,7 +1160,7 @@ function Pedido({ lineas, total, config, agregar, quitar, vaciar, cerrar }) {
   return (
     <div className="fundir fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center" onClick={cerrar}>
       <div className="subir bg-white w-full sm:max-w-lg max-h-[94vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl" onClick={(e) => e.stopPropagation()}>
-        <div className="sticky top-0 bg-white flex items-center justify-between px-5 pt-4 pb-3 border-b border-[var(--borde)] z-10">
+        <div className="sticky top-0 bg-white flex items-center justify-between px-5 pt-8 pb-4 border-b border-[var(--borde)] z-10">
           <h2 className="text-xl font-bold text-[var(--verde)]">Tu pedido</h2>
           <button onClick={cerrar} className="w-10 h-10 text-xl text-[var(--tinta-suave)]" aria-label="Cerrar">
             ✕
