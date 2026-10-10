@@ -121,6 +121,31 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Mantiene la dirección del navegador al día (?categoria=…, ?producto=…, ?buscar=…) para poder copiar y compartir el link.
+  // Usa replaceState: no recarga ni agrega pasos al historial. La primera pasada se saltea para no borrar el link con el que se entró.
+  const urlInicial = useRef(true);
+  useEffect(() => {
+    if (urlInicial.current) {
+      urlInicial.current = false;
+      return;
+    }
+    try {
+      const u = new URL(window.location.href);
+      u.searchParams.delete("categoria");
+      u.searchParams.delete("buscar");
+      u.searchParams.delete("producto");
+      if (categoria && categoria !== TODOS) u.searchParams.set("categoria", categoria);
+      if (busqueda.trim()) u.searchParams.set("buscar", busqueda.trim());
+      if (detalle && detalle.id !== undefined) u.searchParams.set("producto", String(detalle.id));
+      const nuevo = u.pathname + (u.search || "") + u.hash;
+      if (nuevo !== window.location.pathname + window.location.search + window.location.hash) {
+        window.history.replaceState(null, "", nuevo);
+      }
+    } catch (e) {
+      // si el navegador no lo permite, la tienda sigue funcionando igual
+    }
+  }, [categoria, busqueda, detalle]);
+
   // Recupera el carrito guardado en este celular (y lo ajusta a lo que hay hoy).
   useEffect(() => {
     try {
