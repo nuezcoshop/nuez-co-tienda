@@ -453,7 +453,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
         {esInicio && productosDestacados.length > 0 && (
           <section className="mt-6 rev">
             <div className="flex items-center justify-between gap-3 mb-3">
-              <h2 className="text-lg font-bold text-[var(--verde)]"><Escalera texto={config.destacadosTitulo} /></h2>
+              <h2 className="esc-tl text-lg font-bold text-[var(--verde)]"><Escalera texto={config.destacadosTitulo} /></h2>
               <button onClick={irATienda} className="shrink-0 h-9 px-4 rounded-full border-2 border-[var(--verde)] bg-[var(--acento)] text-[var(--sobre-acento)] text-sm font-semibold active:scale-[0.93] transition-transform">
                 Ir a la tienda →
               </button>
@@ -478,7 +478,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
 
         {esInicio && (config.direccion || enlaceUbicacion || enlaceContacto || enlaceInstagram) && (
           <section className="mt-10 text-center text-[var(--verde)] rev">
-            <h2 className="text-xl font-extrabold"><Escalera texto="Visitá nuestra tienda" /></h2>
+            <h2 className="esc-tl text-xl font-extrabold"><Escalera texto="Visitá nuestra tienda" /></h2>
             {config.direccion && <p className="text-base font-semibold mt-1">{config.direccion}</p>}
             {enlaceUbicacion && (
               <a
@@ -527,7 +527,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
         {!esInicio && grupos.map((g) =>
           g.items.length === 0 ? null : (
             <section key={g.titulo} className="mt-6">
-              <h2 className="text-lg font-bold text-[var(--verde)] mb-3"><Escalera texto={g.titulo} /></h2>
+              <h2 className="esc-tl text-lg font-bold text-[var(--verde)] mb-3"><Escalera texto={g.titulo} /></h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                 {g.items.map((item, i) => (
                   <div key={item.id} className="casc flex" style={{ animationDelay: `${Math.min(i, 8) * 60}ms` }}>
@@ -641,7 +641,7 @@ function Nosotros({ datos }) {
   const largo = (datos.texto || "").length > 140 || (datos.texto || "").includes("\n");
   return (
     <section className="mt-6 rev md:max-w-3xl md:mx-auto">
-      <h2 className="text-lg font-bold text-[var(--verde)] mb-3"><Escalera texto={datos.titulo} /></h2>
+      <h2 className="esc-tl text-lg font-bold text-[var(--verde)] mb-3"><Escalera texto={datos.titulo} /></h2>
       <div className="rounded-2xl overflow-hidden bg-[var(--fondo-suave)]">
         {datos.foto && (
           <div className="overflow-hidden">
@@ -650,9 +650,9 @@ function Nosotros({ datos }) {
           </div>
         )}
         <div className="p-5 text-[var(--verde)] rev">
-          {datos.subtitulo && <h3 className="text-xl font-extrabold leading-snug"><Escalera texto={datos.subtitulo} /></h3>}
+          {datos.subtitulo && <h3 className="esc-tl text-xl font-extrabold leading-snug"><Escalera texto={datos.subtitulo} /></h3>}
           {datos.texto && (
-            <p className={`text-sm mt-2 leading-relaxed whitespace-pre-line opacity-90 ${abierto ? "" : "line-clamp-3"}`}><Escalera texto={datos.texto} activo={!abierto} /></p>
+            <p className={`esc-tl text-sm mt-2 leading-relaxed whitespace-pre-line opacity-90 ${abierto ? "" : "line-clamp-3"}`}><Escalera texto={datos.texto} activo={!abierto} /></p>
           )}
           {datos.texto && largo && (
             <button onClick={() => setAbierto(!abierto)} className="mt-3 h-10 px-5 rounded-full border-2 border-[var(--verde)] text-sm font-semibold" aria-expanded={abierto}>
@@ -704,7 +704,7 @@ function Banners({ banners, nombre, bienvenida, sinBienvenida, grande, onEnlace 
     return (
       <div className="mt-4 rounded-2xl bg-[var(--verde-claro)] px-5 py-7 text-center">
         <p className="text-xl font-bold text-[var(--verde)]">Bienvenido a {nombre}</p>
-        <p className="text-sm text-[var(--tinta-suave)] mt-1"><Escalera texto={bienvenida || "Elegí tus productos y cerrá el pedido por WhatsApp."} /></p>
+        <p className="esc-tl text-sm text-[var(--tinta-suave)] mt-1"><Escalera texto={bienvenida || "Elegí tus productos y cerrá el pedido por WhatsApp."} /></p>
       </div>
     );
   }

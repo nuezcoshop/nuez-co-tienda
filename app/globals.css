@@ -84,14 +84,15 @@ body {
 .lite .rev, .lite .encoge, .lite .logo-final, .lite .zoom-lento { animation: none !important; }
 .lite * { will-change: auto !important; }
 
-/* Texto en escalera: cada palabra se completa sola al entrar en pantalla (de a poco, una tras otra) */
-@keyframes palabra { from { opacity: 0.1; transform: translateY(16px); } to { opacity: 1; transform: none; } }
-.esc { display: inline-block; }
+/* Texto en escalera: las palabras se completan de a una, en orden, según cuánto se desliza el texto */
+@keyframes palabra { from { opacity: 0.12; } to { opacity: 1; } }
+.esc { display: inline; }
 @supports (animation-timeline: view()) {
+  .esc-tl { view-timeline: --esc block; }
   .esc {
     animation: palabra linear both;
-    animation-timeline: view();
-    animation-range: cover calc(var(--i) * 0.6%) cover calc(16% + var(--i) * 0.6%);
+    animation-timeline: --esc;
+    animation-range: cover calc(4% + var(--i) / var(--n) * 30%) cover calc(14% + var(--i) / var(--n) * 30%);
   }
 }
 @media (prefers-reduced-motion: reduce) { .esc { animation: none !important; } }
