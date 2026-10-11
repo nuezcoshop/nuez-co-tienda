@@ -84,16 +84,8 @@ body {
 .lite .rev, .lite .encoge, .lite .logo-final, .lite .zoom-lento { animation: none !important; }
 .lite * { will-change: auto !important; }
 
-/* Texto en escalera: las palabras se completan de a una, en orden, según cuánto se desliza el texto */
-@keyframes palabra { from { opacity: 0.12; } to { opacity: 1; } }
-.esc { display: inline; }
-@supports (animation-timeline: view()) {
-  .esc-tl { view-timeline: --esc block; }
-  .esc {
-    animation: palabra linear both;
-    animation-timeline: --esc;
-    animation-range: cover calc(4% + var(--i) / var(--n) * 30%) cover calc(14% + var(--i) / var(--n) * 30%);
-  }
-}
+/* Texto en escalera: al aparecer en pantalla, las palabras se completan de a una (la clase la pone el componente) */
+[data-esc="pre"] .esc { opacity: 0.12; }
+[data-esc="go"] .esc { opacity: 1; transition: opacity 0.1s linear; transition-delay: calc(var(--i) * 45ms); }
 @media (prefers-reduced-motion: reduce) { .esc { animation: none !important; } }
 .lite .esc { animation: none !important; }

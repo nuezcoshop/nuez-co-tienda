@@ -1,19 +1,53 @@
-// Texto que se va completando palabra por palabra, en orden de lectura, mientras se desliza.
-// Solo CSS (sin JavaScript en el navegador): si el navegador no lo soporta, el texto se ve normal.
-// El elemento que lo contiene tiene que llevar la clase "esc-tl" (marca el avance del scroll).
+"use client";
+
+import { useEffect, useRef } from "react";
+
+// Texto que se completa palabra por palabra, una tras otra, cuando aparece en pantalla.
+// Si el navegador no puede (o el celular tiene "quitar animaciones"), el texto se ve normal.
 export default function Escalera({ texto, activo = true }) {
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !activo) return;
+    try {
+      if (
+        document.documentElement.classList.contains("lite") ||
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+        !("IntersectionObserver" in window)
+      )
+        return;
+    } catch (e) {
+      return;
+    }
+    el.setAttribute("data-esc", "pre");
+    const io = new IntersectionObserver(
+      (entradas) => {
+        if (entradas.some((e) => e.isIntersecting)) {
+          el.setAttribute("data-esc", "go");
+          io.disconnect();
+        }
+      },
+      { rootMargin: "0px 0px -10% 0px" }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [texto, activo]);
+
   if (!activo) return String(texto || "");
   const partes = String(texto || "").split(/(\s+)/);
-  const total = partes.filter((p) => p && !/^\s+$/.test(p)).length;
-  const n = Math.max(1, Math.min(total, 24));
   let k = 0;
-  return partes.map((p, idx) => {
-    if (!p || /^\s+$/.test(p)) return p;
-    const i = Math.min(k++, 24);
-    return (
-      <span key={idx} className="esc" style={{ "--i": i, "--n": n }}>
-        {p}
-      </span>
-    );
-  });
+  return (
+    <span ref={ref} className="esc-grupo">
+      {partes.map((p, idx) => {
+        if (!p || /^\s+$/.test(p)) return p;
+        const i = Math.min(k++, 40);
+        return (
+          <span key={idx} className="esc" style={{ "--i": i }}>
+            {p}
+          </span>
+        );
+      })}
+    </span>
+  );
 }
