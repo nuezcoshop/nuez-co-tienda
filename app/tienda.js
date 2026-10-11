@@ -330,6 +330,8 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
       : config.direccion
       ? [`Retiro en sucursal: ${config.direccion}`]
       : [];
+  // Velocidad elegida en el POS (1 lenta ... 10 rápida). El 4 es la velocidad de siempre.
+  const multiplicadorCinta = [0.4, 0.6, 0.8, 1, 1.3, 1.6, 2, 2.5, 3, 4][Math.min(10, Math.max(1, config.cintaVelocidad || 4)) - 1];
   const repeticionesCinta = Math.max(4, Math.ceil(8 / Math.max(mensajesCinta.length, 1)));
 
   let grupos;
@@ -353,7 +355,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
       {mensajesCinta.length > 0 && (
         <div className="bg-[var(--verde)] text-white text-xs font-medium py-2 overflow-hidden whitespace-nowrap">
           {/* Cada grupo repite los mensajes las veces necesarias para cubrir hasta una pantalla muy ancha; la velocidad se mantiene igual. */}
-          <div className="cinta-pista" style={{ animationDuration: `${repeticionesCinta * mensajesCinta.length * 10}s` }}>
+          <div className="cinta-pista" style={{ animationDuration: `${(repeticionesCinta * mensajesCinta.length * 10) / multiplicadorCinta}s` }}>
             {[0, 1].map((k) => (
               <div key={k} className="cinta-grupo" aria-hidden={k === 1 ? "true" : undefined}>
                 {Array.from({ length: repeticionesCinta }).flatMap((_, r) =>

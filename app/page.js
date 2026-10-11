@@ -61,6 +61,7 @@ export default async function Page() {
         : Number(process.env.NEXT_PUBLIC_ENVIO_GRATIS_DESDE) || 0,
     bienvenida: c.bienvenida || "",
     instagram: c.instagram || "",
+    cintaVelocidad: Math.min(10, Math.max(1, Math.round(Number(c.cinta_velocidad) || 4))),
     cinta: String(c.cinta_texto || "").split(/\r?\n/).map((t) => t.trim()).filter(Boolean).slice(0, 6),
     logo: c.logo_url || "",
     sucursal:
