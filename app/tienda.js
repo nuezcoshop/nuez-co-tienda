@@ -358,7 +358,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
               <div key={k} className="cinta-grupo" aria-hidden={k === 1 ? "true" : undefined}>
                 {Array.from({ length: repeticionesCinta }).flatMap((_, r) =>
                   mensajesCinta.map((m, n) => (
-                    <span key={r + "-" + n} className="px-6">
+                    <span key={r + "-" + n}>
                       {m}
                       <span className="mx-6 opacity-60">•</span>
                     </span>
