@@ -24,7 +24,7 @@ export default function Popup({ titulo, boton, link, letraChica }) {
   if (!visible) return null;
 
   const estiloBoton = {
-    background: "var(--fondo, #fff)",
+    background: "var(--acento, #2f7a55)",
     color: "var(--verde, #2f7a55)",
   };
   const clase = "block w-full rounded-full py-3.5 px-5 text-center text-base font-extrabold active:scale-[0.98] transition-transform";
