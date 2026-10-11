@@ -698,7 +698,7 @@ function Banners({ banners, nombre, bienvenida, sinBienvenida, grande, onEnlace 
             />
           );
           return (
-            <div key={b.id} className={`snap-center shrink-0 w-full bg-[var(--fondo-suave)] ${grande ? "aspect-[4/5] md:aspect-[16/9]" : "aspect-[12/5]"}`}>
+            <div key={b.id} className={`snap-center shrink-0 w-full bg-[var(--fondo-suave)] ${grande ? "aspect-[4/5] md:aspect-[16/9]" : "aspect-[3/2]"}`}>
               {b.enlace ? (
                 <a
                   href={normalizarEnlace(b.enlace)}
