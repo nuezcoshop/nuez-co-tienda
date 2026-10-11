@@ -85,7 +85,12 @@ function IconoLupa() {
 }
 
 export default function Tienda({ productos, banners, destacados = [], config, fotosCategorias = {}, hayError }) {
-  const { items, porId } = useMemo(() => armarCatalogo(productos), [productos]);
+  // La bolsa de regalo no se vende como producto del catálogo: se ofrece dentro del carrito (ver "bolsa" más abajo).
+  const bolsaId = config.bolsa && config.bolsa.productoId ? config.bolsa.productoId : "";
+  const { items, porId } = useMemo(() => {
+    const c = armarCatalogo(productos);
+    return bolsaId ? { ...c, items: c.items.filter((i) => String(i.id) !== bolsaId) } : c;
+  }, [productos, bolsaId]);
   const [carrito, setCarrito] = useState({}); // { productoId: cantidad }
   const [listo, setListo] = useState(false);
   const [busqueda, setBusqueda] = useState("");
@@ -320,6 +325,13 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
       : `https://instagram.com/${config.instagram.trim().replace(/^@/, "").replace(/^(www\.)?instagram\.com\//i, "")}`
     : "";
   const enlaceContacto = config.whatsapp ? `https://wa.me/${config.whatsapp}?text=${encodeURIComponent(`Hola ${config.nombre}! Quería hacerles una consulta.`)}` : "";
+
+  // Oferta de la bolsa de regalo en el carrito: solo si está activada, existe y hay stock.
+  const bolsaRow = bolsaId ? porId[bolsaId] : null;
+  const bolsa =
+    config.bolsa && config.bolsa.activa && bolsaRow && disponible(bolsaRow) > 0
+      ? { id: bolsaId, precio: Number(bolsaRow.precio_venta) || 0, foto: config.bolsa.foto || bolsaRow.foto_url || "" }
+      : null;
 
   // Cinta superior: los mensajes elegidos en el POS (uno por renglón). Si no hay, se arma sola con envío gratis o la dirección.
   const mensajesCinta =
@@ -609,6 +621,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
 
       {carritoAbierto && (
         <Pedido
+          bolsa={bolsa}
           lineas={lineas}
           total={total}
           config={config}
@@ -1021,7 +1034,7 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
   );
 }
 
-function Pedido({ lineas, total, config, agregar, quitar, vaciar, cerrar }) {
+function Pedido({ bolsa, lineas, total, config, agregar, quitar, vaciar, cerrar }) {
   const [entrega, setEntrega] = useState("retiro");
   const [nombre, setNombre] = useState("");
   const [direccion, setDireccion] = useState("");
@@ -1286,6 +1299,27 @@ function Pedido({ lineas, total, config, agregar, quitar, vaciar, cerrar }) {
               </div>
             );
           })}
+          {bolsa && lineas.length > 0 && !lineas.some((l) => l.id === bolsa.id) && (
+            <button
+              onClick={() => agregar(bolsa.id, 1)}
+              className="mt-3 w-full flex items-center gap-3 rounded-full border border-[var(--verde)] bg-[var(--fondo-suave)] pl-1.5 pr-4 py-1.5 text-left text-[var(--verde)] active:scale-[0.98] transition-transform"
+              aria-label={`Agregar una bolsa de regalo, ${money(bolsa.precio)}`}
+            >
+              <span className="w-12 h-12 shrink-0 rounded-full overflow-hidden border-2 border-[var(--verde)] bg-white flex items-center justify-center text-xl">
+                {bolsa.foto ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={bolsa.foto} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
+                ) : (
+                  "🎁"
+                )}
+              </span>
+              <span className="flex-1 min-w-0 text-[13px] font-semibold leading-tight">
+                ¿Querés agregar una bolsa de regalo?
+                <span className="block font-medium opacity-80 mt-0.5">+ {money(bolsa.precio)}</span>
+              </span>
+              <span className="w-8 h-8 shrink-0 rounded-full bg-[var(--acento)] text-[var(--sobre-acento)] text-lg flex items-center justify-center">+</span>
+            </button>
+          )}
           {lineas.length > 0 && (
             confirmandoVaciar ? (
               <div className="mt-3 rounded-2xl bg-[var(--fondo-suave)] p-4">
