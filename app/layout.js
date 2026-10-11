@@ -57,7 +57,16 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
+      <head>
+        {/* Navegadores internos de Instagram/Facebook: modo liviano (menos efectos). No cambia nada en Chrome/Safari. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{if(/Instagram|FBAN|FBAV|FB_IAB|FBIOS/i.test(navigator.userAgent))document.documentElement.classList.add('lite')}catch(e){}",
+          }}
+        />
+      </head>
       <body className={montserrat.className}>{children}</body>
     </html>
   );

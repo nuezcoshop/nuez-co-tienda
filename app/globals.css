@@ -79,3 +79,7 @@ body {
   .logo-final,
   .rev, .encoge, .casc, .salto, .cinta-pista, .fundir, .deslizar-izq, .subir, .zoom-lento { animation: none !important; }
 }
+
+/* Modo liviano: navegador interno de Instagram/Facebook (se activa solo desde el layout) */
+.lite .rev, .lite .encoge, .lite .logo-final, .lite .zoom-lento { animation: none !important; }
+.lite * { will-change: auto !important; }
