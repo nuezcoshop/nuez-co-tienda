@@ -321,6 +321,17 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
     : "";
   const enlaceContacto = config.whatsapp ? `https://wa.me/${config.whatsapp}?text=${encodeURIComponent(`Hola ${config.nombre}! Quería hacerles una consulta.`)}` : "";
 
+  // Cinta superior: los mensajes elegidos en el POS (uno por renglón). Si no hay, se arma sola con envío gratis o la dirección.
+  const mensajesCinta =
+    config.cinta && config.cinta.length > 0
+      ? config.cinta
+      : config.envioGratisDesde > 0
+      ? [`Envío gratis en compras desde ${money(config.envioGratisDesde)}`]
+      : config.direccion
+      ? [`Retiro en sucursal: ${config.direccion}`]
+      : [];
+  const repeticionesCinta = Math.max(4, Math.ceil(8 / Math.max(mensajesCinta.length, 1)));
+
   let grupos;
   if (categoria && categoria !== TODOS) {
     grupos = [{ titulo: categoria, items: visibles }];
@@ -339,17 +350,20 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
 
   return (
     <div className="min-h-screen pb-28 bg-[var(--fondo)]">
-      {(config.envioGratisDesde > 0 || config.direccion) && (
+      {mensajesCinta.length > 0 && (
         <div className="bg-[var(--verde)] text-white text-xs font-medium py-2 overflow-hidden whitespace-nowrap">
-          <div className="cinta-pista">
+          {/* Cada grupo repite los mensajes las veces necesarias para cubrir hasta una pantalla muy ancha; la velocidad se mantiene igual. */}
+          <div className="cinta-pista" style={{ animationDuration: `${repeticionesCinta * mensajesCinta.length * 10}s` }}>
             {[0, 1].map((k) => (
               <div key={k} className="cinta-grupo" aria-hidden={k === 1 ? "true" : undefined}>
-                {[0, 1, 2, 3].map((n) => (
-                  <span key={n} className="px-6">
-                    {config.envioGratisDesde > 0 ? `Envío gratis en compras desde ${money(config.envioGratisDesde)}` : `Retiro en sucursal: ${config.direccion}`}
-                    <span className="mx-6 opacity-60">•</span>
-                  </span>
-                ))}
+                {Array.from({ length: repeticionesCinta }).flatMap((_, r) =>
+                  mensajesCinta.map((m, n) => (
+                    <span key={r + "-" + n} className="px-6">
+                      {m}
+                      <span className="mx-6 opacity-60">•</span>
+                    </span>
+                  ))
+                )}
               </div>
             ))}
           </div>
@@ -610,7 +624,7 @@ function Nosotros({ datos }) {
   const [abierto, setAbierto] = useState(false);
   const largo = (datos.texto || "").length > 140 || (datos.texto || "").includes("\n");
   return (
-    <section className="mt-6 rev">
+    <section className="mt-6 rev md:max-w-3xl md:mx-auto">
       <h2 className="text-lg font-bold text-[var(--verde)] mb-3">{datos.titulo}</h2>
       <div className="rounded-2xl overflow-hidden bg-[var(--fondo-suave)]">
         {datos.foto && (
@@ -680,7 +694,7 @@ function Banners({ banners, nombre, bienvenida, sinBienvenida, grande, onEnlace 
   }
 
   return (
-    <div className="mt-4">
+    <div className={`mt-4 ${grande ? "md:max-w-[460px]" : "md:max-w-2xl"} md:mx-auto`}>
       <div
         ref={contenedor}
         onScroll={(e) => setActual(Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth))}
@@ -698,7 +712,7 @@ function Banners({ banners, nombre, bienvenida, sinBienvenida, grande, onEnlace 
             />
           );
           return (
-            <div key={b.id} className={`snap-center shrink-0 w-full bg-[var(--fondo-suave)] ${grande ? "aspect-[4/5] md:aspect-[16/9]" : "aspect-[3/2]"}`}>
+            <div key={b.id} className={`snap-center shrink-0 w-full bg-[var(--fondo-suave)] ${grande ? "aspect-[4/5]" : "aspect-[3/2]"}`}>
               {b.enlace ? (
                 <a
                   href={normalizarEnlace(b.enlace)}
