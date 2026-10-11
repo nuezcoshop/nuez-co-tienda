@@ -85,13 +85,13 @@ body {
 .lite * { will-change: auto !important; }
 
 /* Texto en escalera: cada palabra se completa sola al entrar en pantalla (de a poco, una tras otra) */
-@keyframes palabra { from { opacity: 0.12; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes palabra { from { opacity: 0.1; transform: translateY(16px); } to { opacity: 1; transform: none; } }
 .esc { display: inline-block; }
 @supports (animation-timeline: view()) {
   .esc {
     animation: palabra linear both;
     animation-timeline: view();
-    animation-range: cover calc(var(--i) * 0.5%) cover calc(26% + var(--i) * 0.5%);
+    animation-range: cover calc(var(--i) * 0.6%) cover calc(16% + var(--i) * 0.6%);
   }
 }
 @media (prefers-reduced-motion: reduce) { .esc { animation: none !important; } }

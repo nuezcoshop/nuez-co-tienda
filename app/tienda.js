@@ -652,7 +652,7 @@ function Nosotros({ datos }) {
         <div className="p-5 text-[var(--verde)] rev">
           {datos.subtitulo && <h3 className="text-xl font-extrabold leading-snug"><Escalera texto={datos.subtitulo} /></h3>}
           {datos.texto && (
-            <p className={`text-sm mt-2 leading-relaxed whitespace-pre-line opacity-90 ${abierto ? "" : "line-clamp-3"}`}><Escalera texto={datos.texto} /></p>
+            <p className={`text-sm mt-2 leading-relaxed whitespace-pre-line opacity-90 ${abierto ? "" : "line-clamp-3"}`}><Escalera texto={datos.texto} activo={!abierto} /></p>
           )}
           {datos.texto && largo && (
             <button onClick={() => setAbierto(!abierto)} className="mt-3 h-10 px-5 rounded-full border-2 border-[var(--verde)] text-sm font-semibold" aria-expanded={abierto}>
