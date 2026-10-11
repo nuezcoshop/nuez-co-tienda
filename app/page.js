@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import Tienda from "./tienda";
+import Popup from "./popup";
 
 // La página se genera en el servidor y se refresca sola cada 60 segundos:
 // carga rápido en el celular y no consulta la base en cada visita.
@@ -37,6 +38,11 @@ function coloresDesde(hex, fondo, acento) {
   vars["--sobre-acento"] = principal && Math.abs(lumDe(principal) - lum) > 0.3 ? principal : lum > 0.62 ? "#2a2018" : "#ffffff";
   return vars;
 }
+
+const enlacePopup = (l) => {
+  const t = String(l || "").trim();
+  return !t ? "" : /^https?:\/\//i.test(t) ? t : "https://" + t;
+};
 
 export default async function Page() {
   const [prod, ban, cfg, catf, dest] = await Promise.all([
@@ -87,8 +93,31 @@ export default async function Page() {
   const fotosCategorias = {};
   (catf.data || []).forEach((f) => (fotosCategorias[f.categoria] = f.url));
 
+  // Tienda en pausa: se muestra solo el mensaje elegido en el sistema.
+  if (c.pausa_activa) {
+    return (
+      <div style={{ ...colores, color: "var(--tinta)" }}>
+        {esHex(c.color_fondo) && <style>{`html,body{background:${c.color_fondo}}`}</style>}
+        <main className="min-h-screen flex flex-col items-center justify-center text-center px-6" style={{ background: "var(--fondo, #fff)" }}>
+          {config.logo && <img src={config.logo} alt={config.nombre} className="h-20 w-auto mb-6 object-contain" />}
+          <h1 className="text-2xl font-extrabold mb-3" style={{ color: "var(--verde, #2f7a55)" }}>{config.nombre}</h1>
+          <p className="max-w-md text-base font-semibold whitespace-pre-line">
+            {String(c.pausa_mensaje || "").trim() || "Tienda deshabilitada temporalmente. Volvemos en unos minutos."}
+          </p>
+        </main>
+      </div>
+    );
+  }
+
+  // Pop up: activo y, si hay fecha límite, hasta el final de ese día (hora de Argentina).
+  const hoy = new Date().toLocaleDateString("en-CA", { timeZone: "America/Argentina/Buenos_Aires" });
+  const popupVigente = !!c.popup_activo && !!String(c.popup_titulo || "").trim() && (!c.popup_hasta || String(c.popup_hasta).slice(0, 10) >= hoy);
+
   return (
     <div style={{ ...colores, color: "var(--tinta)" }}>
+      {popupVigente && (
+        <Popup titulo={String(c.popup_titulo).trim()} boton={String(c.popup_boton || "").trim()} link={enlacePopup(c.popup_link)} letraChica={String(c.popup_letra_chica || "").trim()} />
+      )}
       {esHex(c.color_fondo) && <style>{`html,body{background:${c.color_fondo}}`}</style>}
       <Tienda
         productos={prod.data || []}
