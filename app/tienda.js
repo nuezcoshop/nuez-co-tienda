@@ -528,7 +528,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
           g.items.length === 0 ? null : (
             <section key={g.titulo} className="mt-6">
               <h2 className="esc-tl text-lg font-bold text-[var(--verde)] mb-3"><Escalera texto={g.titulo} /></h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-7 gap-y-9">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-5 gap-y-7">
                 {g.items.map((item, i) => (
                   <div key={item.id} className="casc flex" style={{ animationDelay: `${Math.min(i, 8) * 60}ms` }}>
                     <Tarjeta item={item} carrito={carrito} abrir={() => setDetalle(item)} />
@@ -863,7 +863,7 @@ function Tarjeta({ item, carrito, abrir }) {
       disabled={!item.hayStock}
       className={`text-left bg-transparent flex flex-col gap-1 w-full active:scale-[0.97] transition-transform ${item.hayStock ? "" : "opacity-60"}`}
     >
-      <div className="aspect-square bg-transparent relative p-2">
+      <div className="aspect-square bg-transparent relative p-0.5">
         {item.foto_url ? (
           <img src={item.foto_url} alt={item.nombre} loading="lazy" decoding="async" className="w-full h-full object-cover" />
         ) : (
@@ -881,14 +881,16 @@ function Tarjeta({ item, carrito, abrir }) {
         )}
       </div>
       <div className="px-1 flex flex-col gap-1 flex-1 text-[var(--verde)]">
-        <p className="text-[14px] font-extrabold leading-snug line-clamp-2 min-h-[2.3rem]">{item.nombre}</p>
-        <div className="flex items-center justify-between mt-1">
-          <p className="min-w-0 whitespace-nowrap text-[14px] font-extrabold">
+        <div className="min-h-[2.5rem] flex items-end">
+          <p className="text-[15px] font-extrabold leading-snug line-clamp-2">{item.nombre}</p>
+        </div>
+        <div className="flex items-center justify-between">
+          <p className="min-w-0 whitespace-nowrap text-[15px] font-extrabold">
             {precioTexto}
-            {precioSufijo && <span className="ml-1 text-[11px] font-medium opacity-80">{precioSufijo}</span>}
+            {precioSufijo && <span className="ml-1 text-[12px] font-medium opacity-80">{precioSufijo}</span>}
           </p>
           {item.hayStock && (
-            <span className="w-8 h-8 shrink-0 rounded-full bg-[var(--acento)] text-[var(--sobre-acento)] text-xl font-normal flex items-center justify-center">+</span>
+            <span className="w-9 h-9 shrink-0 rounded-full bg-[var(--acento)] text-[var(--sobre-acento)] text-xl font-normal flex items-center justify-center">+</span>
           )}
         </div>
       </div>
