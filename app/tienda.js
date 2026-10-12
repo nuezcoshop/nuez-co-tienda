@@ -850,15 +850,18 @@ function Tarjeta({ item, carrito, abrir }) {
   const abajo = etiqueta ? "top-10" : "top-2";
 
   let precioTexto = "";
+  let precioSufijo = "";
   if (item.tipo === "variantes") precioTexto = "Desde " + money(Math.min(...item.variantes.map((v) => v.precio_venta)));
-  else if (item.tipo === "peso") precioTexto = por100(item.precio_venta);
-  else precioTexto = money(item.precio_venta);
+  else if (item.tipo === "peso") {
+    precioTexto = money(item.precio_venta / 10);
+    precioSufijo = "/ 100 g";
+  } else precioTexto = money(item.precio_venta);
 
   return (
     <button
       onClick={item.hayStock ? abrir : undefined}
       disabled={!item.hayStock}
-      className={`text-left bg-transparent flex flex-col gap-2 w-full active:scale-[0.97] transition-transform ${item.hayStock ? "" : "opacity-60"}`}
+      className={`text-left bg-transparent flex flex-col gap-1 w-full active:scale-[0.97] transition-transform ${item.hayStock ? "" : "opacity-60"}`}
     >
       <div className="aspect-square bg-transparent relative">
         {item.foto_url ? (
@@ -877,12 +880,15 @@ function Tarjeta({ item, carrito, abrir }) {
           <span className="absolute top-2 right-2 w-6 h-6 rounded-full bg-[var(--acento)] text-[var(--sobre-acento)] text-xs flex items-center justify-center">✓</span>
         )}
       </div>
-      <div className="p-3 flex flex-col gap-1 flex-1 text-[var(--verde)] rounded-3xl border-[3px] border-[var(--verde)]">
+      <div className="px-1 flex flex-col gap-1 flex-1 text-[var(--verde)]">
         <p className="text-[15px] font-extrabold leading-snug line-clamp-2 min-h-[2.5rem]">{item.nombre}</p>
         <div className="flex items-center justify-between mt-1">
-          <p className="font-medium text-[15px]">{precioTexto}</p>
+          <p className="min-w-0 whitespace-nowrap text-[15px] font-extrabold">
+            {precioTexto}
+            {precioSufijo && <span className="ml-1 text-[12px] font-medium opacity-80">{precioSufijo}</span>}
+          </p>
           {item.hayStock && (
-            <span className="w-9 h-9 rounded-full bg-[var(--acento)] text-[var(--sobre-acento)] text-xl font-normal flex items-center justify-center">+</span>
+            <span className="w-9 h-9 shrink-0 rounded-full bg-[var(--acento)] text-[var(--sobre-acento)] text-xl font-normal flex items-center justify-center">+</span>
           )}
         </div>
       </div>
