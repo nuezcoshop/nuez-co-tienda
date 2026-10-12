@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import Tienda from "./tienda";
 import Popup from "./popup";
+import Visitas from "./visitas";
 
 // La página se genera en el servidor y se refresca sola cada 60 segundos:
 // carga rápido en el celular y no consulta la base en cada visita.
@@ -115,6 +116,7 @@ export default async function Page() {
 
   return (
     <div style={{ ...colores, color: "var(--tinta)" }}>
+      <Visitas />
       {popupVigente && (
         <Popup titulo={String(c.popup_titulo).trim()} boton={String(c.popup_boton || "").trim()} link={enlacePopup(c.popup_link)} letraChica={String(c.popup_letra_chica || "").trim()} />
       )}
