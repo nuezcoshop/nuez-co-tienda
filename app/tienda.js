@@ -1021,6 +1021,7 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
   const yaEnCarrito = carrito[opcion.id] || 0;
   const inicial = esPeso ? Math.min(Math.max(paso, 0.1 - ((0.1 % paso) || 0)), max) : 1;
   const [cant, setCant] = useState(inicial);
+  const [verMas, setVerMas] = useState(false);
 
   function elegirOpcion(id) {
     setOpcionId(id);
@@ -1033,6 +1034,7 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
   const subtotal = precio * cant;
   const tramos = [...(opcion.tramos || [])].sort((a, b) => a.desde - b.desde);
   const unidadPrecio = esPeso ? " /100 g" : "";
+  const atajos = ATAJOS_KG.filter((m) => m <= max + 1e-9 && m >= paso - 1e-9 && Math.abs(m / paso - Math.round(m / paso)) < 1e-6);
   const mostrar = (p) => (esPeso ? money(p / 10) : money(p));
 
   return (
@@ -1054,9 +1056,26 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
             <h2 className="text-xl font-bold leading-snug flex-1 min-w-0">{item.nombre}</h2>
             {item.categoria && <p className="text-xs font-medium text-[var(--tinta-suave)] uppercase tracking-wide shrink-0 text-right pt-1.5">{item.categoria}</p>}
           </div>
-          {(item.descripcion || (opciones.find((o) => o.descripcion) || {}).descripcion) && (
-            <p className="text-sm text-[var(--tinta-suave)] mt-1.5 leading-snug">{item.descripcion || opciones.find((o) => o.descripcion).descripcion}</p>
-          )}
+          {(() => {
+            const texto = item.descripcion || (opciones.find((o) => o.descripcion) || {}).descripcion;
+            if (!texto) return null;
+            const larga = texto.length > 110;
+            return (
+              <div className="mt-1.5">
+                <p
+                  className="text-sm text-[var(--tinta-suave)] leading-snug"
+                  style={!verMas && larga ? { display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" } : undefined}
+                >
+                  {texto}
+                </p>
+                {larga && (
+                  <button onClick={() => setVerMas((v) => !v)} className="text-xs font-semibold text-[var(--tinta-suave)] underline underline-offset-2 mt-1">
+                    {verMas ? "Leer menos" : "Leer más"}
+                  </button>
+                )}
+              </div>
+            );
+          })()}
 
           {item.tipo === "variantes" && (
             <div className="flex flex-wrap gap-2 mt-3">
@@ -1090,7 +1109,7 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
           <div className="mt-4">
             <p className="text-sm font-semibold mb-2">
               {esPeso ? "¿Cuánto te preparamos?" : "Cantidad"}
-              {esPeso && paso > PASO_KG + 1e-9 && <span className="font-normal text-[var(--tinta-suave)]"> · se vende {textoPaso(paso)}</span>}
+              {esPeso && paso > PASO_KG + 1e-9 && <span className="font-normal text-[var(--tinta-suave)]"> · de a {textoPaso(paso)}</span>}
             </p>
             <Contador
               etiqueta={esPeso ? formatoCantidad(cant, "kg") : String(cant)}
@@ -1099,9 +1118,9 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
               deshabilitarMenos={cant <= paso + 1e-9}
               deshabilitarMas={cant + paso > max + 1e-9}
             />
-            {esPeso && (
+            {esPeso && atajos.length > 1 && (
               <div className="flex gap-2 mt-2">
-                {ATAJOS_KG.filter((m) => m <= max + 1e-9 && m >= paso - 1e-9 && Math.abs(m / paso - Math.round(m / paso)) < 1e-6).map((m) => (
+                {atajos.map((m) => (
                   <button
                     key={m}
                     onClick={() => setCant(m)}
