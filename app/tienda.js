@@ -705,7 +705,7 @@ function FilaCategorias({ children }) {
 
   return (
     <div className="relative mt-3">
-      <div ref={fila} onScroll={medir} className="flex gap-2.5 overflow-x-auto sin-barra -mx-4 px-4 pb-1 md:mx-0 md:px-14">
+      <div ref={fila} onScroll={medir} className="flex gap-2.5 overflow-x-auto sin-barra -mx-4 px-4 pb-1 md:mx-12 md:px-0">
         {children}
       </div>
       {puedeIzq && (
@@ -1087,7 +1087,7 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
 
           <div className="mt-4">
             <p className="text-sm font-semibold mb-2">
-              {esPeso ? "¿Cuánto querés llevar?" : "Cantidad"}
+              {esPeso ? "¿Cuánto te preparamos?" : "Cantidad"}
               {esPeso && paso > PASO_KG + 1e-9 && <span className="font-normal text-[var(--tinta-suave)]"> · se vende {textoPaso(paso)}</span>}
             </p>
             <Contador
