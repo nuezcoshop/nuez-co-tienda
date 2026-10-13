@@ -1037,10 +1037,10 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
 
   return (
     <div className="fundir fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center" onClick={cerrar}>
-      <div className="subir bg-white w-full sm:max-w-md max-h-[94vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl" onClick={(e) => e.stopPropagation()}>
-        <div className="relative aspect-[4/3] bg-[var(--fondo-suave)]">
+      <div className="subir bg-white w-full sm:max-w-md max-h-[94vh] flex flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl" onClick={(e) => e.stopPropagation()}>
+        <div className="relative shrink-0 aspect-[4/3] max-h-[40vh] w-full bg-[var(--fondo-suave)]">
           {item.foto_url ? (
-            <img src={item.foto_url} alt={item.nombre} decoding="async" className="w-full h-full object-cover" />
+            <img src={item.foto_url} alt={item.nombre} decoding="async" className="w-full h-full object-contain" />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-6xl">🌰</div>
           )}
@@ -1049,7 +1049,7 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
           </button>
         </div>
 
-        <div className="p-5">
+        <div className="p-5 pb-3 overflow-y-auto min-h-0 flex-1">
           {item.categoria && <p className="text-xs font-medium text-[var(--tinta-suave)] uppercase tracking-wide">{item.categoria}</p>}
           <h2 className="text-xl font-bold leading-snug mt-0.5">{item.nombre}</h2>
           {(item.descripcion || (opciones.find((o) => o.descripcion) || {}).descripcion) && (
@@ -1118,10 +1118,13 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
             )}
           </div>
 
+        </div>
+
+        <div className="px-5 pt-2 pb-5 shrink-0 bg-white">
           <button
             onClick={() => onAgregar(opcion.id, cant)}
             disabled={max <= 0}
-            className="mt-5 w-full h-14 rounded-2xl bg-[var(--acento)] hover:brightness-95 text-[var(--sobre-acento)] font-bold flex items-center justify-between px-5 active:scale-[0.99] disabled:opacity-50"
+            className="w-full h-14 rounded-2xl bg-[var(--acento)] hover:brightness-95 text-[var(--sobre-acento)] font-bold flex items-center justify-between px-5 active:scale-[0.99] disabled:opacity-50"
           >
             <span>Agregar al carrito</span>
             <span>{money(subtotal)}</span>
