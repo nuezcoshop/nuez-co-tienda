@@ -1037,21 +1037,23 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
 
   return (
     <div className="fundir fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center" onClick={cerrar}>
-      <div className="subir bg-[var(--fondo)] w-full sm:max-w-md max-h-[94vh] flex flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl" onClick={(e) => e.stopPropagation()}>
-        <div className="relative shrink-0 aspect-[4/3] max-h-[40vh] w-full bg-[var(--fondo)]">
+      <div className="subir bg-[var(--fondo)] w-full sm:max-w-md max-h-[92vh] max-h-[92dvh] flex flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl" onClick={(e) => e.stopPropagation()}>
+        <div className="relative shrink-0 aspect-[4/3] max-h-[34vh] max-h-[34dvh] w-full bg-[var(--fondo)]">
           {item.foto_url ? (
             <img src={item.foto_url} alt={item.nombre} decoding="async" className="w-full h-full object-contain" />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-6xl">🌰</div>
           )}
-          <button onClick={cerrar} className="absolute top-3 right-3 w-10 h-10 rounded-full bg-white/90 text-lg shadow" aria-label="Cerrar">
+          <button onClick={cerrar} className="absolute top-4 right-3 w-10 h-10 rounded-full bg-white/90 text-lg shadow" aria-label="Cerrar">
             ✕
           </button>
         </div>
 
         <div className="p-5 pb-3 overflow-y-auto min-h-0 flex-1">
-          {item.categoria && <p className="text-xs font-medium text-[var(--tinta-suave)] uppercase tracking-wide">{item.categoria}</p>}
-          <h2 className="text-xl font-bold leading-snug mt-0.5">{item.nombre}</h2>
+          <div className="flex items-start justify-between gap-3">
+            <h2 className="text-xl font-bold leading-snug flex-1 min-w-0">{item.nombre}</h2>
+            {item.categoria && <p className="text-xs font-medium text-[var(--tinta-suave)] uppercase tracking-wide shrink-0 text-right pt-1.5">{item.categoria}</p>}
+          </div>
           {(item.descripcion || (opciones.find((o) => o.descripcion) || {}).descripcion) && (
             <p className="text-sm text-[var(--tinta-suave)] mt-1.5 leading-snug">{item.descripcion || opciones.find((o) => o.descripcion).descripcion}</p>
           )}
