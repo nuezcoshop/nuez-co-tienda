@@ -151,8 +151,10 @@ declare
   v_toma numeric;
   v_lotes jsonb;
   v_hay boolean := false;
+  v_uid uuid;
   l record;
 begin
+  select id into v_uid from public.perfiles where id = auth.uid();
   select estado, numero into v_estado, v_numero from public.ventas where id = v_venta;
   if not found then raise exception 'La venta no existe'; end if;
   if v_estado = 'anulada' then raise exception 'La venta está anulada'; end if;
@@ -160,7 +162,7 @@ begin
   if v_dest = 'stock' and v_ubic is null then raise exception 'Falta la ubicación del stock'; end if;
 
   insert into public.devoluciones (venta_id, motivo, destino, monto, medio_pago, nota, usuario_id)
-  values (v_venta, p->>'motivo', v_dest, v_monto, v_medio, p->>'nota', auth.uid())
+  values (v_venta, p->>'motivo', v_dest, v_monto, v_medio, p->>'nota', v_uid)
   returning id into v_dev;
 
   for v_it in select * from jsonb_array_elements(coalesce(p->'items', '[]'::jsonb)) loop
@@ -200,11 +202,11 @@ begin
 
   if v_medio is not null and v_monto > 0 then
     insert into public.movimientos_caja (apertura_id, tipo, concepto, importe, medio_pago, referencia, usuario_id)
-    values (v_apertura, 'egreso', 'Devolución venta #' || v_numero, v_monto, v_medio, 'devolucion:' || v_dev, auth.uid());
+    values (v_apertura, 'egreso', 'Devolución venta #' || v_numero, v_monto, v_medio, 'devolucion:' || v_dev, v_uid);
   end if;
 
   insert into public.auditoria (usuario_id, accion, modulo, descripcion)
-  values (auth.uid(), 'devolucion', 'ventas', 'Devolución de la venta #' || v_numero || ' (' || v_dest || '): ' || coalesce(p->>'motivo', ''));
+  values (v_uid, 'devolucion', 'ventas', 'Devolución de la venta #' || v_numero || ' (' || v_dest || '): ' || coalesce(p->>'motivo', ''));
 
   return v_dev;
 end;
