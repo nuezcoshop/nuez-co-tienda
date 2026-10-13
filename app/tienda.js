@@ -385,15 +385,25 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
         </div>
       )}
 
-      <div className="max-w-5xl mx-auto px-4">
-        <div className="grid grid-cols-[44px_1fr_44px] items-center py-3">
-          <button
-            onClick={() => setMenuAbierto(true)}
-            className="w-11 h-11 rounded-full flex items-center justify-center text-[var(--verde)]"
-            aria-label="Abrir menú"
-          >
-            <IconoMenu />
-          </button>
+      <div className="max-w-5xl mx-auto px-4 md:max-w-none md:px-10">
+        <div className="grid grid-cols-[44px_1fr_44px] md:grid-cols-[1fr_auto_1fr] items-center py-3">
+          <div className="flex items-center">
+            <button
+              onClick={() => setMenuAbierto(true)}
+              className="w-11 h-11 rounded-full flex items-center justify-center text-[var(--verde)] md:hidden"
+              aria-label="Abrir menú"
+            >
+              <IconoMenu />
+            </button>
+            {/* En computadora no hay menú hamburguesa: se ven los títulos directamente. */}
+            <nav className="hidden md:flex items-center gap-8 text-[var(--verde)] font-semibold">
+              <button onClick={irAInicio} className="hover:opacity-70 transition-opacity">Inicio</button>
+              <button onClick={irATienda} className="hover:opacity-70 transition-opacity">Productos</button>
+              {enlaceContacto ? (
+                <a href={enlaceContacto} target="_blank" rel="noopener noreferrer" className="hover:opacity-70 transition-opacity">Contacto</a>
+              ) : null}
+            </nav>
+          </div>
           <button onClick={irAInicio} aria-label="Ir al inicio" className="justify-self-center">
             {config.logo ? (
               <img src={config.logo} alt={config.nombre} className="h-11 w-auto max-w-[200px] object-contain" />
@@ -438,9 +448,15 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
       </div>
       )}
 
+      {esInicio && (
+        <div className="px-4 md:px-0">
+          <Banners banners={bannersPrincipal} nombre={config.nombre} bienvenida={config.bienvenida} grande onEnlace={abrirEnlace} />
+        </div>
+      )}
+
       <main className="max-w-5xl mx-auto px-4">
         {!esInicio && categorias.length > 0 && (
-          <div className="flex gap-2.5 overflow-x-auto sin-barra mt-3 -mx-4 px-4 pb-1">
+          <div className="flex gap-2.5 overflow-x-auto sin-barra mt-3 -mx-4 px-4 pb-1 md:flex-wrap md:overflow-x-visible md:mx-0 md:px-0 md:justify-center">
             <CirculoCategoria nombre="Todos" activo={!categoria || categoria === TODOS} onClick={() => setCategoria(TODOS)} />
             {categorias.map((c) => (
               <CirculoCategoria key={c} nombre={c} activo={categoria === c} onClick={() => setCategoria(c)} />
@@ -448,7 +464,6 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
           </div>
         )}
 
-        {esInicio && <Banners banners={bannersPrincipal} nombre={config.nombre} bienvenida={config.bienvenida} grande onEnlace={abrirEnlace} />}
 
         {esInicio && productosDestacados.length > 0 && (
           <section className="mt-6 rev">
@@ -709,16 +724,19 @@ function Banners({ banners, nombre, bienvenida, sinBienvenida, grande, onEnlace 
     );
   }
 
+  // Si todos los banners tienen imagen ancha para computadora, en la compu se muestran a lo ancho.
+  const ancho = banners.every((b) => b.imagen_escritorio_url);
+
   return (
-    <div className={`mt-4 ${grande ? "md:max-w-[460px]" : "md:max-w-2xl"} md:mx-auto`}>
+    <div className={`mt-4 ${ancho ? "md:mt-0 md:max-w-none" : grande ? "md:max-w-[460px]" : "md:max-w-2xl"} md:mx-auto`}>
       <div
         ref={contenedor}
         onScroll={(e) => setActual(Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth))}
         onTouchStart={() => (pausaHasta.current = Date.now() + 6000)}
-        className={`flex overflow-x-auto snap-x snap-mandatory sin-barra rounded-2xl ${grande ? "encoge" : ""}`}
+        className={`flex overflow-x-auto snap-x snap-mandatory sin-barra rounded-2xl ${ancho && grande ? "md:rounded-none" : ""} ${grande ? "encoge" : ""}`}
       >
         {banners.map((b, idx) => {
-          const imagen = (
+          const img = (
             <img
               src={b.imagen_url}
               alt={b.titulo || "Promoción"}
@@ -727,8 +745,16 @@ function Banners({ banners, nombre, bienvenida, sinBienvenida, grande, onEnlace 
               className="w-full h-full object-cover"
             />
           );
+          const imagen = ancho ? (
+            <picture>
+              <source media="(min-width: 768px)" srcSet={b.imagen_escritorio_url} />
+              {img}
+            </picture>
+          ) : (
+            img
+          );
           return (
-            <div key={b.id} className={`snap-center shrink-0 w-full bg-[var(--fondo-suave)] ${grande ? "aspect-[4/5]" : "aspect-[3/2]"}`}>
+            <div key={b.id} className={`snap-center shrink-0 w-full bg-[var(--fondo-suave)] ${grande ? "aspect-[4/5]" : "aspect-[3/2]"} ${ancho ? "md:aspect-[12/5]" : ""}`}>
               {b.enlace ? (
                 <a
                   href={normalizarEnlace(b.enlace)}
@@ -809,6 +835,27 @@ function CarruselFavoritos({ items, carrito, abrir }) {
       }}
       style={{ touchAction: "pan-y" }}
     >
+      {/* Flechas: solo en computadora (con el mouse no se puede deslizar) */}
+      <button
+        onClick={() => {
+          frenar();
+          mover(-1);
+        }}
+        aria-label="Anterior"
+        className="hidden md:flex absolute left-6 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full border-2 border-[var(--verde)] bg-[var(--fondo)] text-[var(--verde)] text-2xl leading-none items-center justify-center hover:bg-[var(--acento)] transition-colors"
+      >
+        ‹
+      </button>
+      <button
+        onClick={() => {
+          frenar();
+          mover(1);
+        }}
+        aria-label="Siguiente"
+        className="hidden md:flex absolute right-6 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full border-2 border-[var(--verde)] bg-[var(--fondo)] text-[var(--verde)] text-2xl leading-none items-center justify-center hover:bg-[var(--acento)] transition-colors"
+      >
+        ›
+      </button>
       {/* copia invisible: da el alto al carrusel */}
       <div className="invisible w-40 mx-auto pointer-events-none" aria-hidden="true">
         <Tarjeta item={items[0]} carrito={carrito} abrir={() => {}} />

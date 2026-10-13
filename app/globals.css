@@ -77,7 +77,11 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .logo-final,
-  .rev, .encoge, .casc, .salto, .cinta-pista, .fundir, .deslizar-izq, .subir, .zoom-lento { animation: none !important; }
+  .rev, .encoge, .casc, .salto, .fundir, .deslizar-izq, .subir, .zoom-lento { animation: none !important; }
+}
+/* La cinta de mensajes se detiene con "quitar animaciones" solo en celular; en computadora siempre se mueve. */
+@media (prefers-reduced-motion: reduce) and (max-width: 767px) {
+  .cinta-pista { animation: none !important; }
 }
 
 /* Modo liviano: navegador interno de Instagram/Facebook (se activa solo desde el layout) */
