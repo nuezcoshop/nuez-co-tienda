@@ -1109,7 +1109,7 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
           <div className="mt-4">
             <p className="text-sm font-semibold mb-2">
               {esPeso ? "¿Cuánto te preparamos?" : "Cantidad"}
-              {esPeso && paso > PASO_KG + 1e-9 && <span className="font-normal text-[var(--tinta-suave)]"> · de a {textoPaso(paso)}</span>}
+              {esPeso && paso > PASO_KG + 1e-9 && <span className="font-normal text-[var(--tinta-suave)]"> · {textoPaso(paso)}</span>}
             </p>
             <Contador
               etiqueta={esPeso ? formatoCantidad(cant, "kg") : String(cant)}
