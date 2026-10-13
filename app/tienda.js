@@ -1037,8 +1037,8 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
 
   return (
     <div className="fundir fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center" onClick={cerrar}>
-      <div className="subir bg-white w-full sm:max-w-md max-h-[94vh] flex flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl" onClick={(e) => e.stopPropagation()}>
-        <div className="relative shrink-0 aspect-[4/3] max-h-[40vh] w-full bg-[var(--fondo-suave)]">
+      <div className="subir bg-[var(--fondo)] w-full sm:max-w-md max-h-[94vh] flex flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl" onClick={(e) => e.stopPropagation()}>
+        <div className="relative shrink-0 aspect-[4/3] max-h-[40vh] w-full bg-[var(--fondo)]">
           {item.foto_url ? (
             <img src={item.foto_url} alt={item.nombre} decoding="async" className="w-full h-full object-contain" />
           ) : (
@@ -1120,7 +1120,7 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
 
         </div>
 
-        <div className="px-5 pt-2 pb-5 shrink-0 bg-white">
+        <div className="px-5 pt-2 pb-5 shrink-0 bg-[var(--fondo)]">
           <button
             onClick={() => onAgregar(opcion.id, cant)}
             disabled={max <= 0}
