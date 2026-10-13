@@ -456,12 +456,12 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
 
       <main className="max-w-5xl mx-auto px-4">
         {!esInicio && categorias.length > 0 && (
-          <div className="flex gap-2.5 overflow-x-auto sin-barra mt-3 -mx-4 px-4 pb-1 md:flex-wrap md:overflow-x-visible md:mx-0 md:px-0 md:justify-center">
+          <FilaCategorias>
             <CirculoCategoria nombre="Todos" activo={!categoria || categoria === TODOS} onClick={() => setCategoria(TODOS)} />
             {categorias.map((c) => (
               <CirculoCategoria key={c} nombre={c} activo={categoria === c} onClick={() => setCategoria(c)} />
             ))}
-          </div>
+          </FilaCategorias>
         )}
 
 
@@ -677,6 +677,48 @@ function Nosotros({ datos }) {
         </div>
       </div>
     </section>
+  );
+}
+
+// Fila de categorías que se desliza de costado. En computadora suma flechas ‹ › (con el mouse no se puede deslizar).
+function FilaCategorias({ children }) {
+  const fila = useRef(null);
+  const [puedeIzq, setPuedeIzq] = useState(false);
+  const [puedeDer, setPuedeDer] = useState(false);
+
+  function medir() {
+    const el = fila.current;
+    if (!el) return;
+    setPuedeIzq(el.scrollLeft > 2);
+    setPuedeDer(el.scrollLeft + el.clientWidth < el.scrollWidth - 2);
+  }
+
+  useEffect(() => {
+    medir();
+    window.addEventListener("resize", medir);
+    return () => window.removeEventListener("resize", medir);
+  }, []);
+
+  const mover = (dir) => fila.current && fila.current.scrollBy({ left: dir * fila.current.clientWidth * 0.7, behavior: "smooth" });
+  const flecha =
+    "hidden absolute top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full border-2 border-[var(--verde)] bg-[var(--fondo)] text-[var(--verde)] text-2xl leading-none items-center justify-center hover:bg-[var(--acento)] transition-colors";
+
+  return (
+    <div className="relative mt-3">
+      <div ref={fila} onScroll={medir} className="flex gap-2.5 overflow-x-auto sin-barra -mx-4 px-4 pb-1 md:mx-0 md:px-14">
+        {children}
+      </div>
+      {puedeIzq && (
+        <button onClick={() => mover(-1)} aria-label="Categorías anteriores" className={flecha + " md:flex left-0"}>
+          ‹
+        </button>
+      )}
+      {puedeDer && (
+        <button onClick={() => mover(1)} aria-label="Más categorías" className={flecha + " md:flex right-0"}>
+          ›
+        </button>
+      )}
+    </div>
   );
 }
 
