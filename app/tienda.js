@@ -2,6 +2,7 @@
 
 import Escalera from "./escalera";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { estadoEscalones, textoBeneficio } from "./escalones";
 import dynamic from "next/dynamic";
 import { costoEnvio, enlaceMapa } from "@/lib/envio";
 import { supabase } from "@/lib/supabase";
@@ -338,8 +339,8 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
   const mensajesCinta =
     config.cinta && config.cinta.length > 0
       ? config.cinta
-      : config.envioGratisDesde > 0
-      ? [`Envío gratis en compras desde ${money(config.envioGratisDesde)}`]
+      : config.escalones && config.escalones.length > 0
+      ? config.escalones.map((e) => e.mensaje || (e.tipo === "envio_gratis" ? `Envío gratis en compras desde ${money(e.desde)}` : `${textoBeneficio(e, money).replace(/^./, (c) => c.toUpperCase())} en compras desde ${money(e.desde)}`))
       : config.direccion
       ? [`Retiro en sucursal: ${config.direccion}`]
       : [];
@@ -1238,15 +1239,21 @@ function Pedido({ bolsa, lineas, total, config, agregar, quitar, vaciar, cerrar 
     }
   }, []);
 
-  const gratis = config.envioGratisDesde > 0 && total >= config.envioGratisDesde;
-  const faltaParaGratis = config.envioGratisDesde > 0 ? Math.max(config.envioGratisDesde - total, 0) : 0;
-  const progreso = config.envioGratisDesde > 0 ? Math.min(total / config.envioGratisDesde, 1) : 0;
+  const esc = estadoEscalones(config.escalones || [], total);
+  const gratis = esc.envioGratis;
+  const sig = esc.siguiente;
+  const faltaParaSig = sig ? Math.max(sig.desde - total, 0) : 0;
+  const progreso = sig ? Math.min(total / sig.desde, 1) : 1;
 
   const hayMapa = !!config.sucursal;
   const calculo = entrega === "envio" ? costoEnvio(config.zonasEnvio, config.sucursal, punto) : null;
   const costoFinal = entrega === "envio" && !gratis && calculo && !calculo.fuera ? calculo.precio : 0;
-  const descuentoCupon = cupon ? Math.min(cupon.descuento, total) : 0;
-  const totalFinal = total - descuentoCupon + costoFinal;
+  const descCuponBruto = cupon ? Math.min(cupon.descuento, total) : 0;
+  // El descuento por monto y el cupón no se suman: rige el más conveniente.
+  const usaEscalon = esc.descuento > descCuponBruto;
+  const descuentoEscalon = usaEscalon ? esc.descuento : 0;
+  const descuentoCupon = usaEscalon ? 0 : descCuponBruto;
+  const totalFinal = total - descuentoCupon - descuentoEscalon + costoFinal;
 
   async function enviar() {
     if (enviando) return;
@@ -1297,7 +1304,7 @@ function Pedido({ bolsa, lineas, total, config, agregar, quitar, vaciar, cerrar 
           medio_pago: pago,
           notas: notas.trim(),
           total_productos: total,
-          cupon: cupon ? cupon.codigo : null,
+          cupon: cupon && !usaEscalon ? cupon.codigo : null,
           items: lineas.map((l) => ({
             producto_id: l.id,
             nombre: l.row.nombre,
@@ -1327,9 +1334,10 @@ function Pedido({ bolsa, lineas, total, config, agregar, quitar, vaciar, cerrar 
       ...detalle,
       "",
       `Total de productos: ${money(total)}`,
-      cupon ? `Cupón ${cupon.codigo}: -${money(descuentoCupon)}` : null,
+      cupon && !usaEscalon ? `Cupón ${cupon.codigo}: -${money(descuentoCupon)}` : null,
+      descuentoEscalon > 0 ? `Descuento por monto de compra: -${money(descuentoEscalon)}` : null,
       lineaEntrega,
-      costoFinal > 0 || cupon ? `Total a pagar: ${money(totalFinal)}` : null,
+      costoFinal > 0 || cupon || descuentoEscalon > 0 ? `Total a pagar: ${money(totalFinal)}` : null,
       `Medio de pago: ${pago}`,
       `Nombre: ${nombre.trim()}`,
       `Teléfono: ${telefono.trim()}`,
@@ -1378,11 +1386,17 @@ function Pedido({ bolsa, lineas, total, config, agregar, quitar, vaciar, cerrar 
           </button>
         </div>
 
-        {config.envioGratisDesde > 0 && lineas.length > 0 && (
+        {(config.escalones || []).length > 0 && lineas.length > 0 && (
           <div className="px-5 pt-4">
-            <p className={`text-xs font-semibold mb-1.5 ${gratis ? "text-[var(--verde)]" : "text-[var(--tinta-suave)]"}`}>
-              {gratis ? "¡Tenés envío gratis!" : `Te faltan ${money(faltaParaGratis)} para envío gratis`}
-            </p>
+            {esc.actual && (
+              <p className="text-xs font-semibold mb-1 text-[var(--verde)]">¡Tenés {textoBeneficio(esc.actual, money)}!</p>
+            )}
+            {sig && (
+              <p className="text-xs font-semibold mb-1.5 text-[var(--tinta-suave)]">
+                Te faltan {money(faltaParaSig)} para {textoBeneficio(sig, money)}
+                {sig.tipo === "envio_gratis" && esc.actual && esc.actual.tipo !== "envio_gratis" ? " (reemplaza el descuento)" : ""}
+              </p>
+            )}
             <div className="h-2 rounded-full bg-[var(--fondo-suave)] overflow-hidden">
               <div className="h-full bg-[var(--acento)] rounded-full transition-all" style={{ width: `${progreso * 100}%` }} />
             </div>
@@ -1593,13 +1607,21 @@ function Pedido({ bolsa, lineas, total, config, agregar, quitar, vaciar, cerrar 
               <span className="text-sm text-[var(--tinta-suave)]">Total de productos</span>
               <span className="text-xl font-extrabold">{money(total)}</span>
             </div>
-            {cupon && (
+            {cupon && !usaEscalon && (
               <div className="flex items-center justify-between mb-3 -mt-1">
                 <span className="text-sm text-[var(--tinta-suave)]">Descuento ({cupon.codigo})</span>
                 <span className="font-bold text-[var(--verde)]">-{money(descuentoCupon)}</span>
               </div>
             )}
-            {(costoFinal > 0 || cupon) && (
+            {descuentoEscalon > 0 && (
+              <div className="flex items-center justify-between mb-3 -mt-1">
+                <span className="text-sm text-[var(--tinta-suave)]">
+                  Descuento por tu compra{cupon ? " (mejor que el cupón)" : ""}
+                </span>
+                <span className="font-bold text-[var(--verde)]">-{money(descuentoEscalon)}</span>
+              </div>
+            )}
+            {(costoFinal > 0 || cupon || descuentoEscalon > 0) && (
               <>
                 {costoFinal > 0 && (
                   <div className="flex items-center justify-between mb-1">

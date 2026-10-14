@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { limpiarEscalones } from "./escalones";
 import Tienda from "./tienda";
 import Popup from "./popup";
 import Visitas from "./visitas";
@@ -66,6 +67,7 @@ export default async function Page() {
       c.envio_gratis_desde !== null && c.envio_gratis_desde !== undefined
         ? Number(c.envio_gratis_desde) || 0
         : Number(process.env.NEXT_PUBLIC_ENVIO_GRATIS_DESDE) || 0,
+    escalones: limpiarEscalones(c.escalones, c.envio_gratis_desde !== null && c.envio_gratis_desde !== undefined ? Number(c.envio_gratis_desde) || 0 : Number(process.env.NEXT_PUBLIC_ENVIO_GRATIS_DESDE) || 0),
     bienvenida: c.bienvenida || "",
     instagram: c.instagram || "",
     bolsa: { activa: !!c.bolsa_activa, productoId: c.bolsa_producto_id ? String(c.bolsa_producto_id) : "", foto: c.bolsa_foto || "" },
