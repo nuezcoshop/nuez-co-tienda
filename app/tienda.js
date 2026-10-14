@@ -337,7 +337,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
 
   // Cinta superior: los mensajes elegidos en el POS (uno por renglón). Si no hay, se arma sola con envío gratis o la dirección.
   const mensajesEscalones = (config.escalones || []).map(
-    (e) => e.mensaje || (e.tipo === "envio_gratis" ? `Envío gratis en compras desde ${money(e.desde)}` : `${textoBeneficio(e, money).replace(/^./, (c) => c.toUpperCase())} en compras desde ${money(e.desde)}`)
+    (e) => e.mensaje || (e.tipo === "envio_gratis" ? `Envío gratis a domicilio desde ${money(e.desde)}` : `${textoBeneficio(e, money).replace(/^./, (c) => c.toUpperCase())} en compras desde ${money(e.desde)}`)
   );
   const mensajesCinta = [...mensajesEscalones, ...(config.cinta || [])].slice(0, 9);
   if (mensajesCinta.length === 0 && config.direccion) mensajesCinta.push(`Retiro en sucursal: ${config.direccion}`);
@@ -1236,7 +1236,7 @@ function Pedido({ bolsa, lineas, total, config, agregar, quitar, vaciar, cerrar 
     }
   }, []);
 
-  const esc = estadoEscalones(config.escalones || [], total);
+  const esc = estadoEscalones(config.escalones || [], total, entrega);
   const gratis = esc.envioGratis;
   const sig = esc.siguiente;
   const faltaParaSig = sig ? Math.max(sig.desde - total, 0) : 0;
@@ -1385,14 +1385,32 @@ function Pedido({ bolsa, lineas, total, config, agregar, quitar, vaciar, cerrar 
 
         {(config.escalones || []).length > 0 && lineas.length > 0 && (
           <div className="px-5 pt-4">
-            {esc.actual && (
-              <p className="text-xs font-semibold mb-1 text-[var(--verde)]">¡Tenés {textoBeneficio(esc.actual, money)}!</p>
-            )}
-            {sig && (
-              <p className="text-xs font-semibold mb-1.5 text-[var(--tinta-suave)]">
-                Te faltan {money(faltaParaSig)} para {textoBeneficio(sig, money)}
-                {sig.tipo === "envio_gratis" && esc.actual && esc.actual.tipo !== "envio_gratis" ? " (reemplaza el descuento)" : ""}
-              </p>
+            {esc.envioGratis ? (
+              <>
+                <p className="text-xs font-semibold mb-1 text-[var(--verde)]">¡Tenés envío gratis a domicilio!</p>
+                {esc.descuentoSiRetira > 0 && (
+                  <p className="text-xs mb-1.5 text-[var(--tinta-suave)]">
+                    Si preferís retirar en sucursal, tenés {textoBeneficio(esc.descTier, money)} en lugar del envío gratis.
+                  </p>
+                )}
+              </>
+            ) : (
+              <>
+                {esc.descTier && (
+                  <p className="text-xs font-semibold mb-1 text-[var(--verde)]">¡Tenés {textoBeneficio(esc.descTier, money)}!</p>
+                )}
+                {sig && (
+                  <p className="text-xs font-semibold mb-1.5 text-[var(--tinta-suave)]">
+                    Te faltan {money(faltaParaSig)} para {sig.tipo === "envio_gratis" ? "envío gratis a domicilio" : textoBeneficio(sig, money)}
+                    {sig.tipo === "envio_gratis" && esc.descTier ? " (en lugar del descuento; con retiro en sucursal mantenés el descuento)" : ""}
+                  </p>
+                )}
+                {!sig && entrega !== "envio" && esc.envioTier && (
+                  <p className="text-xs mb-1.5 text-[var(--tinta-suave)]">
+                    Elegí envío a domicilio y es gratis (en lugar del descuento).
+                  </p>
+                )}
+              </>
             )}
             <div className="h-2 rounded-full bg-[var(--fondo-suave)] overflow-hidden">
               <div className="h-full bg-[var(--acento)] rounded-full transition-all" style={{ width: `${progreso * 100}%` }} />

@@ -21,6 +21,7 @@ declare
   t jsonb;
   mejor jsonb := null;
   esc_desc numeric := 0;
+  gratis_envio boolean := false;
   tel text := right(regexp_replace(coalesce(p ->> 'telefono', ''), '\D', '', 'g'), 8);
 begin
   if its is null or jsonb_typeof(its) <> 'array' or jsonb_array_length(its) = 0 or jsonb_array_length(its) > 100 then
@@ -31,12 +32,17 @@ begin
   select escalones into esc from public.tienda_config where id = 1;
   if esc is not null and jsonb_typeof(esc) = 'array' then
     for t in select * from jsonb_array_elements(esc) loop
-      if sub >= coalesce(nullif(t ->> 'desde', '')::numeric, 0)
+      if t ->> 'tipo' = 'envio_gratis' then
+        -- El envío gratis rige solo para entrega a domicilio y reemplaza al descuento.
+        if p ->> 'entrega' = 'envio' and sub >= coalesce(nullif(t ->> 'desde', '')::numeric, 0) then
+          gratis_envio := true;
+        end if;
+      elsif sub >= coalesce(nullif(t ->> 'desde', '')::numeric, 0)
          and (mejor is null or coalesce(nullif(t ->> 'desde', '')::numeric, 0) >= coalesce(nullif(mejor ->> 'desde', '')::numeric, 0)) then
         mejor := t;
       end if;
     end loop;
-    if mejor is not null then
+    if mejor is not null and not gratis_envio then
       if mejor ->> 'tipo' = 'porcentaje' then
         esc_desc := round(sub * least(greatest(coalesce(nullif(mejor ->> 'valor', '')::numeric, 0), 0), 100) / 100);
       elsif mejor ->> 'tipo' = 'monto' then

@@ -1,5 +1,4 @@
 // Escalones de la tienda: beneficios según el monto de la compra (descuento % / descuento $ / envío gratis).
-// Rige SIEMPRE el escalón más alto alcanzado (reemplaza al anterior, no se suman).
 
 export function limpiarEscalones(lista, envioGratisDesde) {
   let e = (Array.isArray(lista) ? lista : [])
@@ -25,15 +24,28 @@ export function textoBeneficio(e, money) {
   return `${String(e.valor).replace(".", ",")}% de descuento`;
 }
 
-export function estadoEscalones(escalones, total) {
-  let actual = null;
+// Reglas: el descuento (% o $) rige desde su monto, tanto para retiro como para envío.
+// El envío gratis rige solo con entrega a domicilio y, en ese caso, reemplaza al descuento.
+export function estadoEscalones(escalones, total, entrega) {
+  let descTier = null;
+  let envioTier = null;
   let siguiente = null;
   for (const e of escalones) {
-    if (total >= e.desde) actual = e;
-    else if (!siguiente) siguiente = e;
+    if (total >= e.desde) {
+      if (e.tipo === "envio_gratis") envioTier = e;
+      else descTier = e;
+    } else if (!siguiente && (entrega === "envio" || e.tipo !== "envio_gratis")) siguiente = e;
   }
-  let descuento = 0;
-  if (actual && actual.tipo === "porcentaje") descuento = Math.round((total * Math.min(actual.valor, 100)) / 100);
-  if (actual && actual.tipo === "monto") descuento = Math.min(actual.valor, total);
-  return { actual, siguiente, descuento, envioGratis: !!actual && actual.tipo === "envio_gratis" };
+  let descBruto = 0;
+  if (descTier && descTier.tipo === "porcentaje") descBruto = Math.round((total * Math.min(descTier.valor, 100)) / 100);
+  if (descTier && descTier.tipo === "monto") descBruto = Math.min(descTier.valor, total);
+  const envioGratis = entrega === "envio" && !!envioTier;
+  return {
+    descTier,
+    envioTier,
+    siguiente,
+    envioGratis,
+    descuento: envioGratis ? 0 : descBruto,
+    descuentoSiRetira: descBruto,
+  };
 }
