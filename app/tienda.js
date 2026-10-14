@@ -336,14 +336,11 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
       : null;
 
   // Cinta superior: los mensajes elegidos en el POS (uno por renglón). Si no hay, se arma sola con envío gratis o la dirección.
-  const mensajesCinta =
-    config.cinta && config.cinta.length > 0
-      ? config.cinta
-      : config.escalones && config.escalones.length > 0
-      ? config.escalones.map((e) => e.mensaje || (e.tipo === "envio_gratis" ? `Envío gratis en compras desde ${money(e.desde)}` : `${textoBeneficio(e, money).replace(/^./, (c) => c.toUpperCase())} en compras desde ${money(e.desde)}`))
-      : config.direccion
-      ? [`Retiro en sucursal: ${config.direccion}`]
-      : [];
+  const mensajesEscalones = (config.escalones || []).map(
+    (e) => e.mensaje || (e.tipo === "envio_gratis" ? `Envío gratis en compras desde ${money(e.desde)}` : `${textoBeneficio(e, money).replace(/^./, (c) => c.toUpperCase())} en compras desde ${money(e.desde)}`)
+  );
+  const mensajesCinta = [...mensajesEscalones, ...(config.cinta || [])].slice(0, 9);
+  if (mensajesCinta.length === 0 && config.direccion) mensajesCinta.push(`Retiro en sucursal: ${config.direccion}`);
   // Velocidad elegida en el POS (1 lenta ... 10 rápida). El 4 es la velocidad de siempre.
   const multiplicadorCinta = [0.4, 0.6, 0.8, 1, 1.3, 1.6, 2, 2.5, 3, 4][Math.min(10, Math.max(1, config.cintaVelocidad || 4)) - 1];
   const repeticionesCinta = Math.max(4, Math.ceil(8 / Math.max(mensajesCinta.length, 1)));
