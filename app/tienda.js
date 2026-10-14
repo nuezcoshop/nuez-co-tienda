@@ -1390,19 +1390,26 @@ function Pedido({ bolsa, lineas, total, config, agregar, quitar, vaciar, cerrar 
                 <p className="text-xs font-semibold mb-1 text-[var(--verde)]">¡Tenés envío gratis a domicilio!</p>
                 {esc.descuentoSiRetira > 0 && (
                   <p className="text-xs mb-1.5 text-[var(--tinta-suave)]">
-                    Si preferís retirar en sucursal, tenés {textoBeneficio(esc.descTier, money)} en lugar del envío gratis.
+                    Si preferís retirar en el local: {textoBeneficio(esc.descTier, money)} en lugar del envío gratis.
                   </p>
                 )}
+              </>
+            ) : sig && sig.tipo === "envio_gratis" && esc.descTier ? (
+              <>
+                <p className="text-xs font-semibold mb-1 text-[var(--verde)]">¡Ya tenés un {textoBeneficio(esc.descTier, money).replace(" de descuento", "")} OFF!</p>
+                <p className="text-xs font-semibold mb-0.5 text-[var(--tinta-suave)]">Sumá {money(faltaParaSig)} más y elegí:</p>
+                <p className="text-xs mb-0.5 text-[var(--tinta-suave)]">🚚 Envío gratis a domicilio</p>
+                <p className="text-xs mb-0.5 text-[var(--tinta-suave)]">🛍️ {textoBeneficio(esc.descTier, money).replace(" de descuento", "")} OFF retirando en el local</p>
+                <p className="text-xs italic mb-1.5 text-[var(--tinta-suave)]">Dos beneficios, vos elegís.</p>
               </>
             ) : (
               <>
                 {esc.descTier && (
-                  <p className="text-xs font-semibold mb-1 text-[var(--verde)]">¡Tenés {textoBeneficio(esc.descTier, money)}!</p>
+                  <p className="text-xs font-semibold mb-1 text-[var(--verde)]">¡Ya tenés {textoBeneficio(esc.descTier, money)}!</p>
                 )}
                 {sig && (
                   <p className="text-xs font-semibold mb-1.5 text-[var(--tinta-suave)]">
-                    Te faltan {money(faltaParaSig)} para {sig.tipo === "envio_gratis" ? "envío gratis a domicilio" : textoBeneficio(sig, money)}
-                    {sig.tipo === "envio_gratis" && esc.descTier ? " (en lugar del descuento; con retiro en sucursal mantenés el descuento)" : ""}
+                    Sumá {money(faltaParaSig)} más para {sig.tipo === "envio_gratis" ? "envío gratis a domicilio" : textoBeneficio(sig, money)}
                   </p>
                 )}
                 {!sig && entrega !== "envio" && esc.envioTier && (
