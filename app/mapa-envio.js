@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { distanciaKm } from "@/lib/envio";
 
 const icono = (emoji, tam) =>
   L.divIcon({
@@ -14,6 +13,14 @@ const icono = (emoji, tam) =>
   });
 
 // Mapa liviano (OpenStreetMap): el cliente toca o arrastra el pin hasta su casa.
+// Pin azul moderno (SVG), arrastrable
+const PIN_AZUL = L.divIcon({
+  html: '<svg width="34" height="44" viewBox="0 0 34 44" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 2px 3px rgba(0,0,0,.35))"><path d="M17 0C7.6 0 0 7.4 0 16.6 0 29 17 44 17 44s17-15 17-27.4C34 7.4 26.4 0 17 0z" fill="#2a7de1"/><circle cx="17" cy="16.5" r="6.5" fill="#fff"/></svg>',
+  className: "",
+  iconSize: [34, 44],
+  iconAnchor: [17, 44],
+});
+
 // Búsqueda de direcciones gratuita (OpenStreetMap). Photon sugiere mientras se escribe; si no encuentra nada,
 // "Buscar" prueba con Nominatim. Se limita a la zona de la sucursal para no mostrar resultados de otras ciudades.
 async function buscarDirecciones(texto, centro, usarNominatim) {
@@ -22,7 +29,14 @@ async function buscarDirecciones(texto, centro, usarNominatim) {
   const q = /r[ií]o\s*cuarto/i.test(texto) ? texto : texto + ", Río Cuarto";
   if (!usarNominatim) {
     const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=6&lat=${c.lat}&lon=${c.lng}&bbox=${c.lng - d},${c.lat - d},${c.lng + d},${c.lat + d}`;
-    const r = await fetch(url);
+    const ctl = new AbortController();
+    const corte = setTimeout(() => ctl.abort(), 4000);
+    let r;
+    try {
+      r = await fetch(url, { signal: ctl.signal });
+    } finally {
+      clearTimeout(corte);
+    }
     if (!r.ok) throw new Error("photon");
     const j = await r.json();
     return (j.features || [])
@@ -69,7 +83,7 @@ export default function MapaEnvio({ sucursal, zonas, inicial, direccion, onConfi
     setPos(p);
     if (!mapa.current) return;
     if (!pin.current) {
-      pin.current = L.marker([p.lat, p.lng], { draggable: true, icon: icono("📍", 36) }).addTo(mapa.current);
+      pin.current = L.marker([p.lat, p.lng], { draggable: true, icon: PIN_AZUL }).addTo(mapa.current);
       pin.current.on("dragend", () => {
         const ll = pin.current.getLatLng();
         setPos({ lat: ll.lat, lng: ll.lng });
@@ -84,16 +98,11 @@ export default function MapaEnvio({ sucursal, zonas, inicial, direccion, onConfi
     const centro = inicial || sucursal || { lat: -33.1307, lng: -64.3499 };
     const m = L.map(caja.current, { zoomControl: true, attributionControl: true }).setView([centro.lat, centro.lng], inicial ? 16 : 14);
     mapa.current = m;
-    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+      subdomains: "abcd",
       maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
     }).addTo(m);
-    if (sucursal) {
-      L.marker([sucursal.lat, sucursal.lng], { icon: icono("🏪", 30), interactive: false }).addTo(m);
-      (zonas || [])
-        .filter((z) => Number(z.km) > 0)
-        .forEach((z) => L.circle([sucursal.lat, sucursal.lng], { radius: Number(z.km) * 1000, color: "#2f7a55", weight: 1, fillOpacity: 0.03, dashArray: "4 4", interactive: false }).addTo(m));
-    }
     m.on("click", (e) => ponerPin({ lat: e.latlng.lat, lng: e.latlng.lng }, false));
     if (inicial) ponerPin(inicial, false);
     setTimeout(() => m.invalidateSize(), 150);
@@ -116,18 +125,21 @@ export default function MapaEnvio({ sucursal, zonas, inicial, direccion, onConfi
     setBuscando(true);
     setAviso("");
     try {
-      let res = await buscarDirecciones(limpio, sucursal, usarNominatim);
-      if (res.length === 0 && !usarNominatim) res = await buscarDirecciones(limpio, sucursal, true).catch(() => []);
+      let res = [];
+      if (!usarNominatim) res = await buscarDirecciones(limpio, sucursal, false).catch(() => []);
+      // Si el buscador rápido no encuentra nada o tarda, probamos con el otro automáticamente.
+      if (res.length === 0) res = await buscarDirecciones(limpio, sucursal, true);
       if (mi !== seq.current) return;
+      setBuscando(false);
       setSugerencias(res);
       setSinResultados(res.length === 0);
       if (autoPin && res.length > 0) elegir(res[0], false);
     } catch {
       if (mi !== seq.current) return;
       setSugerencias([]);
+      setBuscando(false);
       setAviso("No pudimos buscar la dirección ahora. Tocá el mapa para marcar tu casa.");
     }
-    setBuscando(false);
   }
 
   function elegir(r, cerrarLista = true) {
@@ -146,7 +158,7 @@ export default function MapaEnvio({ sucursal, zonas, inicial, direccion, onConfi
       primera.current = false;
       if (!inicial && direccion && direccion.trim().length >= 4) return;
     }
-    const t = setTimeout(() => buscar(texto, false, false), 600);
+    const t = setTimeout(() => buscar(texto, false, false), 450);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [texto]);
@@ -170,7 +182,6 @@ export default function MapaEnvio({ sucursal, zonas, inicial, direccion, onConfi
     );
   }
 
-  const km = pos && sucursal ? distanciaKm(sucursal, pos) : null;
 
   return (
     <div className="fixed inset-0 z-[60] bg-black/50 flex items-end sm:items-center justify-center" onClick={(e) => { e.stopPropagation(); onCerrar(); }}>
@@ -195,7 +206,7 @@ export default function MapaEnvio({ sucursal, zonas, inicial, direccion, onConfi
               autoComplete="off"
             />
             <button onClick={() => buscar(texto, true, false)} className="h-11 px-4 rounded-xl bg-[var(--verde)] text-white text-sm font-semibold">
-              {buscando ? "..." : "Buscar"}
+              Buscar
             </button>
           </div>
           {sugerencias.length > 0 && !elegida && (
@@ -208,12 +219,13 @@ export default function MapaEnvio({ sucursal, zonas, inicial, direccion, onConfi
               ))}
             </div>
           )}
+          {buscando && !elegida && sugerencias.length === 0 && <p className="text-xs text-[var(--tinta-suave)] mt-1">Buscando…</p>}
           {sinResultados && !elegida && !buscando && texto.trim().length >= 4 && (
             <p className="text-xs text-[var(--tinta-suave)] mt-1">No encontramos esa dirección. Probá con otro formato o tocá el mapa donde vivís.</p>
           )}
         </div>
         <p className="px-5 text-xs text-[var(--tinta-suave)] mb-2">
-          {elegida && pos ? "📍 ¿Es acá donde vivís? Si no, arrastrá el pin o tocá el mapa en el lugar exacto." : "Tocá el mapa donde vivís o arrastrá el pin 📍. Podés acercar con dos dedos."}
+          {elegida && pos ? "¿Es acá donde vivís? Si no, arrastrá el pin o tocá el mapa en el lugar exacto." : "Tocá el mapa donde vivís o arrastrá el pin 📍. Podés acercar con dos dedos."}
         </p>
         <div ref={caja} className="relative z-0 w-full h-[46vh] bg-[var(--fondo-suave)]" />
         <div className="p-4">
@@ -224,10 +236,10 @@ export default function MapaEnvio({ sucursal, zonas, inicial, direccion, onConfi
             </button>
             <button
               disabled={!pos}
-              onClick={() => onConfirmar(pos)}
+              onClick={() => onConfirmar(pos, elegida ? texto : "")}
               className="flex-1 h-12 rounded-xl bg-[var(--verde)] text-white font-bold disabled:opacity-40"
             >
-              {pos ? (km !== null ? `Confirmar (a ${km.toFixed(1).replace(".", ",")} km)` : "Confirmar ubicación") : "Marcá tu ubicación"}
+              {pos ? "Confirmar ubicación" : "Marcá tu ubicación"}
             </button>
           </div>
         </div>

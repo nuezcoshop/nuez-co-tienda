@@ -1275,8 +1275,8 @@ function Pedido({ bolsa, lineas, total, config, agregar, quitar, vaciar, cerrar 
     if (lineas.length === 0) return setError("Tu pedido está vacío.");
     if (!nombre.trim()) return setError("Escribí tu nombre.");
     if (telefono.replace(/\D/g, "").length < 8) return setError("Escribí tu número de WhatsApp para poder avisarte.");
-    if (entrega === "envio" && !direccion.trim()) return setError("Escribí la dirección de entrega.");
-    if (entrega === "envio" && hayMapa && !punto) return setError("Marcá tu ubicación en el mapa para calcular el envío.");
+    if (entrega === "envio" && !hayMapa && !direccion.trim()) return setError("Escribí la dirección de entrega.");
+    if (entrega === "envio" && hayMapa && !punto) return setError("Marcá en el mapa dónde lo llevamos.");
     if (!config.whatsapp) return setError("La tienda todavía no tiene un WhatsApp configurado.");
 
     try {
@@ -1296,7 +1296,7 @@ function Pedido({ bolsa, lineas, total, config, agregar, quitar, vaciar, cerrar 
       if (gratis) costoTexto = "envío gratis";
       else if (calculo && !calculo.fuera) costoTexto = `envío ${money(calculo.precio)}`;
       else if (calculo && calculo.fuera) costoTexto = "fuera de la zona de envío, a coordinar";
-      lineaEntrega = `Entrega: Envío a domicilio (${direccion.trim()}) — ${costoTexto}`;
+      lineaEntrega = `Entrega: Envío a domicilio (${direccion.trim() || "ubicación marcada en el mapa"}) — ${costoTexto}`;
       if (punto) lineaEntrega += `\nUbicación: ${enlaceMapa(punto)}`;
     }
 
@@ -1309,7 +1309,7 @@ function Pedido({ bolsa, lineas, total, config, agregar, quitar, vaciar, cerrar 
           nombre: nombre.trim(),
           telefono: telefono.trim(),
           entrega,
-          direccion: entrega === "envio" ? direccion.trim() : "",
+          direccion: entrega === "envio" ? direccion.trim() || (punto ? "Ubicación marcada en el mapa" : "") : "",
           lat: entrega === "envio" && punto ? punto.lat : null,
           lng: entrega === "envio" && punto ? punto.lng : null,
           costo_envio: costoFinal,
@@ -1542,18 +1542,26 @@ function Pedido({ bolsa, lineas, total, config, agregar, quitar, vaciar, cerrar 
             )}
             {entrega === "envio" && (
               <div className="mb-3">
-                <input
-                  value={direccion}
-                  onChange={(e) => setDireccion(e.target.value)}
-                  placeholder="Dirección de entrega"
-                  className="w-full h-12 px-4 rounded-xl border border-[var(--borde)] bg-white outline-none focus:border-[var(--verde)] text-base"
-                />
+                {!hayMapa && (
+                  <input
+                    value={direccion}
+                    onChange={(e) => setDireccion(e.target.value)}
+                    placeholder="Dirección de entrega"
+                    className="w-full h-12 px-4 rounded-xl border border-[var(--borde)] bg-white outline-none focus:border-[var(--verde)] text-base"
+                  />
+                )}
                 {hayMapa && (
                   <button
                     onClick={() => setMapaAbierto(true)}
-                    className={`mt-2 w-full h-12 rounded-xl border text-sm font-semibold ${punto ? "border-[var(--verde)] bg-[var(--verde-claro)] text-[var(--verde)]" : "border-[var(--borde)] bg-white"}`}
+                    className={`w-full min-h-[3rem] py-2 px-3 rounded-xl border text-sm font-semibold ${punto ? "border-[var(--verde)] bg-[var(--verde-claro)] text-[var(--verde)]" : "border-[var(--verde)] bg-white text-[var(--verde)]"}`}
                   >
-                    {punto ? "📍 Ubicación marcada · Cambiar" : "📍 Marcar mi ubicación en el mapa"}
+                    {punto ? (
+                      <>
+                        📍 {direccion.trim() || "Ubicación marcada"} <span className="font-normal underline">· Cambiar</span>
+                      </>
+                    ) : (
+                      "📍 Marcar dónde lo llevamos"
+                    )}
                   </button>
                 )}
                 <p className={`text-xs mt-1.5 ${gratis || (calculo && !calculo.fuera) ? "text-[var(--verde)] font-semibold" : "text-[var(--tinta-suave)]"}`}>
@@ -1592,7 +1600,7 @@ function Pedido({ bolsa, lineas, total, config, agregar, quitar, vaciar, cerrar 
             <textarea
               value={notas}
               onChange={(e) => setNotas(e.target.value)}
-              placeholder="Notas (opcional)"
+              placeholder={entrega === "envio" ? "Notas (opcional): piso, depto, entre calles, timbre..." : "Notas (opcional)"}
               rows={2}
               className="w-full px-4 py-3 rounded-xl border border-[var(--borde)] bg-white outline-none focus:border-[var(--verde)] text-base"
             />
@@ -1682,10 +1690,10 @@ function Pedido({ bolsa, lineas, total, config, agregar, quitar, vaciar, cerrar 
                 sucursal={config.sucursal}
                 zonas={config.zonasEnvio}
                 inicial={punto}
-                direccion={direccion}
                 onCerrar={() => setMapaAbierto(false)}
-                onConfirmar={(p) => {
+                onConfirmar={(p, dir) => {
                   setPunto(p);
+                  setDireccion(dir || "");
                   setMapaAbierto(false);
                 }}
               />
