@@ -929,7 +929,16 @@ function CarruselFavoritos({ items, carrito, abrir }) {
   );
 }
 
+// Cuánto se ahorra comprando el combo en vez de llevar cada producto por separado.
+function ahorroDeCombo(row) {
+  if (!row || !row.es_combo || !Array.isArray(row.combo_detalle)) return { separado: 0, ahorro: 0 };
+  const separado = Math.round(row.combo_detalle.reduce((a, c) => a + (Number(c.precio) || 0) * (Number(c.cantidad) || 0), 0));
+  const ahorro = separado - Math.round(Number(row.precio_venta) || 0);
+  return { separado, ahorro: ahorro > 0 ? ahorro : 0 };
+}
+
 function Tarjeta({ item, carrito, abrir }) {
+  const combo = ahorroDeCombo(item);
   const tieneTramos = (item.tramos || []).length > 0;
   const opciones = item.tipo === "variantes" ? item.variantes : [item];
   const enCarrito = opciones.some((o) => carrito[o.id] > 0);
@@ -963,6 +972,9 @@ function Tarjeta({ item, carrito, abrir }) {
         {item.hayStock && tieneTramos && (
           <span className={`absolute ${abajo} left-2 text-[11px] font-semibold bg-[var(--amarillo)] text-[var(--tinta)] px-2 py-1 rounded-full`}>Precio por cantidad</span>
         )}
+        {item.hayStock && combo.ahorro > 0 && (
+          <span className={`absolute ${abajo} left-2 text-[11px] font-semibold bg-[var(--amarillo)] text-[var(--tinta)] px-2 py-1 rounded-full`}>Ahorrás {money(combo.ahorro)}</span>
+        )}
         {enCarrito && (
           <span className="absolute top-2 right-2 w-6 h-6 rounded-full bg-[var(--acento)] text-[var(--sobre-acento)] text-xs flex items-center justify-center">✓</span>
         )}
@@ -974,6 +986,7 @@ function Tarjeta({ item, carrito, abrir }) {
         <div className="flex items-center justify-between">
           <p className="min-w-0 whitespace-nowrap text-[15px] font-extrabold">
             {precioTexto}
+            {combo.ahorro > 0 && <span className="ml-1.5 text-[12px] font-medium line-through opacity-60">{money(combo.separado)}</span>}
             {precioSufijo && <span className="ml-1 text-[12px] font-medium opacity-80">{precioSufijo}</span>}
           </p>
           {item.hayStock && (
@@ -1088,6 +1101,17 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
                   </li>
                 ))}
               </ul>
+              {(() => {
+                const c = ahorroDeCombo(item);
+                if (c.ahorro <= 0) return null;
+                return (
+                  <p className="text-sm mt-2 text-[var(--verde)]">
+                    Por separado: <span className="line-through">{money(c.separado)}</span> · Combo: <b>{money(item.precio_venta)}</b>
+                    <br />
+                    <b>¡Ahorrás {money(c.ahorro)}!</b>
+                  </p>
+                );
+              })()}
             </div>
           )}
 
@@ -1266,6 +1290,7 @@ function Pedido({ bolsa, lineas, total, config, agregar, quitar, vaciar, cerrar 
   }, []);
 
   const ahorroCantidad = Math.round(lineas.reduce((a, l) => a + ahorroPorCantidad(l.row, l.cantidad), 0));
+  const ahorroCombos = Math.round(lineas.reduce((a, l) => a + ahorroDeCombo(l.row).ahorro * l.cantidad, 0));
   const esc = estadoEscalones(config.escalones || [], total, entrega);
   const gratis = esc.envioGratis;
   const sig = esc.siguiente;
@@ -1674,6 +1699,9 @@ function Pedido({ bolsa, lineas, total, config, agregar, quitar, vaciar, cerrar 
               {cupon && <p className="text-xs text-[var(--tinta-suave)] mt-1">El cupón se valida otra vez al enviar el pedido.</p>}
             </div>
 
+            {ahorroCombos > 0 && (
+              <p className="mt-4 -mb-1 text-sm font-semibold text-[var(--verde)]">¡Te ahorraste {money(ahorroCombos)} con los combos!</p>
+            )}
             {ahorroCantidad > 0 && (
               <p className="mt-4 -mb-1 text-sm font-semibold text-[var(--verde)]">¡Te ahorraste {money(ahorroCantidad)} comprando por cantidad!</p>
             )}

@@ -64,7 +64,7 @@ stable
 security definer
 set search_path = public
 as $$
-  select coalesce(jsonb_agg(jsonb_build_object('nombre', p.nombre, 'cantidad', ci.cantidad, 'unidad', p.unidad) order by p.nombre), '[]'::jsonb)
+  select coalesce(jsonb_agg(jsonb_build_object('nombre', p.nombre, 'cantidad', ci.cantidad, 'unidad', p.unidad, 'precio', p.precio_venta) order by p.nombre), '[]'::jsonb)
   from public.combo_items ci join public.productos p on p.id = ci.producto_id
   where ci.combo_id = cid;
 $$;
