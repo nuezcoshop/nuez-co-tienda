@@ -6,7 +6,7 @@ import { estadoEscalones, textoBeneficio } from "./escalones";
 import dynamic from "next/dynamic";
 import { costoEnvio, enlaceMapa } from "@/lib/envio";
 import { supabase } from "@/lib/supabase";
-import { armarCatalogo, disponible, formatoCantidad, money, normalizarTexto, precioPorCantidad } from "@/lib/catalogo";
+import { ahorroPorCantidad, armarCatalogo, disponible, formatoCantidad, money, normalizarTexto, precioPorCantidad, sugerenciaTramo } from "@/lib/catalogo";
 
 // El mapa se descarga recién cuando el cliente elige envío a domicilio: no pesa en la carga normal.
 const MapaEnvio = dynamic(() => import("./mapa-envio"), {
@@ -1034,6 +1034,9 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
   const unidadPrecio = esPeso ? " /100 g" : "";
   const atajos = ATAJOS_KG.filter((m) => m <= max + 1e-9 && m >= paso - 1e-9 && Math.abs(m / paso - Math.round(m / paso)) < 1e-6);
   const mostrar = (p) => (esPeso ? money(p / 10) : money(p));
+  const totalCant = redondear(yaEnCarrito + cant);
+  const ahorroActual = ahorroPorCantidad(opcion, totalCant);
+  const sugerencia = tramos.length > 0 ? sugerenciaTramo(opcion, totalCant, cant, paso, max) : null;
 
   return (
     <div className="fundir fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center" onClick={cerrar}>
@@ -1128,6 +1131,19 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
                   </button>
                 ))}
               </div>
+            )}
+            {sugerencia ? (
+              <button
+                onClick={() => setCant(sugerencia.cantidad)}
+                className="mt-2 w-full text-left text-xs rounded-xl bg-[var(--verde-claro)] text-[var(--verde)] px-3 py-2 leading-snug"
+              >
+                Por <b>{money(sugerencia.extra)}</b> más, llevás <b>{formatoCantidad(sugerencia.cantidad, esPeso ? "kg" : "un")}</b> y ahorrás{" "}
+                <b>{money(sugerencia.ahorroPorUnidad)}</b> {esPeso ? "por kilo" : "por unidad"}.
+              </button>
+            ) : (
+              ahorroActual > 0 && (
+                <p className="text-xs text-[var(--verde)] font-medium mt-2">Con esta cantidad ahorrás {money(ahorroActual)} por el precio por cantidad.</p>
+              )
             )}
             {cant + paso > max + 1e-9 && <p className="text-xs text-[var(--tinta-suave)] mt-2">Es el máximo disponible por ahora.</p>}
             {yaEnCarrito > 0 && (
@@ -1236,6 +1252,7 @@ function Pedido({ bolsa, lineas, total, config, agregar, quitar, vaciar, cerrar 
     }
   }, []);
 
+  const ahorroCantidad = Math.round(lineas.reduce((a, l) => a + ahorroPorCantidad(l.row, l.cantidad), 0));
   const esc = estadoEscalones(config.escalones || [], total, entrega);
   const gratis = esc.envioGratis;
   const sig = esc.siguiente;
@@ -1625,6 +1642,9 @@ function Pedido({ bolsa, lineas, total, config, agregar, quitar, vaciar, cerrar 
               {cupon && <p className="text-xs text-[var(--tinta-suave)] mt-1">El cupón se valida otra vez al enviar el pedido.</p>}
             </div>
 
+            {ahorroCantidad > 0 && (
+              <p className="mt-4 -mb-1 text-sm font-semibold text-[var(--verde)]">¡Te ahorraste {money(ahorroCantidad)} comprando por cantidad!</p>
+            )}
             <div className="flex items-center justify-between mt-4 mb-3">
               <span className="text-sm text-[var(--tinta-suave)]">Total de productos</span>
               <span className="text-xl font-extrabold">{money(total)}</span>
