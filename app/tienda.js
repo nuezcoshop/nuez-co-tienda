@@ -1682,6 +1682,7 @@ function Pedido({ bolsa, lineas, total, config, agregar, quitar, vaciar, cerrar 
                 sucursal={config.sucursal}
                 zonas={config.zonasEnvio}
                 inicial={punto}
+                direccion={direccion}
                 onCerrar={() => setMapaAbierto(false)}
                 onConfirmar={(p) => {
                   setPunto(p);

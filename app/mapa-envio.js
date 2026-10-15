@@ -14,12 +14,56 @@ const icono = (emoji, tam) =>
   });
 
 // Mapa liviano (OpenStreetMap): el cliente toca o arrastra el pin hasta su casa.
-export default function MapaEnvio({ sucursal, zonas, inicial, onConfirmar, onCerrar }) {
+// Búsqueda de direcciones gratuita (OpenStreetMap). Photon sugiere mientras se escribe; si no encuentra nada,
+// "Buscar" prueba con Nominatim. Se limita a la zona de la sucursal para no mostrar resultados de otras ciudades.
+async function buscarDirecciones(texto, centro, usarNominatim) {
+  const c = centro || { lat: -33.1307, lng: -64.3499 };
+  const d = 0.25; // ~25 km alrededor de la sucursal
+  const q = /r[ií]o\s*cuarto/i.test(texto) ? texto : texto + ", Río Cuarto";
+  if (!usarNominatim) {
+    const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=6&lat=${c.lat}&lon=${c.lng}&bbox=${c.lng - d},${c.lat - d},${c.lng + d},${c.lat + d}`;
+    const r = await fetch(url);
+    if (!r.ok) throw new Error("photon");
+    const j = await r.json();
+    return (j.features || [])
+      .map((f) => {
+        const p = f.properties || {};
+        const calle = p.street || p.name || "";
+        const titulo = p.housenumber ? `${calle} ${p.housenumber}` : calle;
+        const resto = [p.district || p.suburb, p.city || p.town || p.village].filter(Boolean).join(", ");
+        const [lng, lat] = f.geometry?.coordinates || [];
+        return titulo && isFinite(lat) && isFinite(lng) ? { titulo, resto, lat, lng } : null;
+      })
+      .filter(Boolean);
+  }
+  const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=6&countrycodes=ar&bounded=1&viewbox=${c.lng - d},${c.lat + d},${c.lng + d},${c.lat - d}&q=${encodeURIComponent(q)}`;
+  const r = await fetch(url);
+  if (!r.ok) throw new Error("nominatim");
+  const j = await r.json();
+  return (j || [])
+    .map((x) => {
+      const a = x.address || {};
+      const calle = a.road || x.name || "";
+      const titulo = a.house_number ? `${calle} ${a.house_number}` : calle;
+      const resto = [a.suburb || a.neighbourhood, a.city || a.town || a.village].filter(Boolean).join(", ");
+      return titulo && isFinite(Number(x.lat)) ? { titulo, resto, lat: Number(x.lat), lng: Number(x.lon) } : null;
+    })
+    .filter(Boolean);
+}
+
+export default function MapaEnvio({ sucursal, zonas, inicial, direccion, onConfirmar, onCerrar }) {
   const caja = useRef(null);
   const mapa = useRef(null);
   const pin = useRef(null);
   const [pos, setPos] = useState(inicial || null);
   const [aviso, setAviso] = useState("");
+  const [texto, setTexto] = useState(inicial ? "" : direccion || "");
+  const [sugerencias, setSugerencias] = useState([]);
+  const [buscando, setBuscando] = useState(false);
+  const [sinResultados, setSinResultados] = useState(false);
+  const [elegida, setElegida] = useState(false);
+  const seq = useRef(0);
+  const primera = useRef(true);
 
   function ponerPin(p, centrar) {
     setPos(p);
@@ -61,6 +105,61 @@ export default function MapaEnvio({ sucursal, zonas, inicial, onConfirmar, onCer
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  async function buscar(t, usarNominatim, autoPin) {
+    const limpio = String(t || "").trim();
+    if (limpio.length < 4) {
+      setSugerencias([]);
+      setSinResultados(false);
+      return;
+    }
+    const mi = ++seq.current;
+    setBuscando(true);
+    setAviso("");
+    try {
+      let res = await buscarDirecciones(limpio, sucursal, usarNominatim);
+      if (res.length === 0 && !usarNominatim) res = await buscarDirecciones(limpio, sucursal, true).catch(() => []);
+      if (mi !== seq.current) return;
+      setSugerencias(res);
+      setSinResultados(res.length === 0);
+      if (autoPin && res.length > 0) elegir(res[0], false);
+    } catch {
+      if (mi !== seq.current) return;
+      setSugerencias([]);
+      setAviso("No pudimos buscar la dirección ahora. Tocá el mapa para marcar tu casa.");
+    }
+    setBuscando(false);
+  }
+
+  function elegir(r, cerrarLista = true) {
+    ponerPin({ lat: r.lat, lng: r.lng }, true);
+    if (mapa.current) mapa.current.setView([r.lat, r.lng], 17);
+    setElegida(true);
+    setTexto(r.resto ? `${r.titulo}, ${r.resto}` : r.titulo);
+    if (cerrarLista) setSugerencias([]);
+  }
+
+  // Sugerencias mientras se escribe (con una pequeña espera para no saturar el servicio gratuito)
+  useEffect(() => {
+    if (elegida) return;
+    // La primera vez, si ya había una dirección escrita, la busca la otra búsqueda automática (con pin).
+    if (primera.current) {
+      primera.current = false;
+      if (!inicial && direccion && direccion.trim().length >= 4) return;
+    }
+    const t = setTimeout(() => buscar(texto, false, false), 600);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [texto]);
+
+  // Si el cliente ya había escrito su dirección en el pedido, la buscamos sola al abrir el mapa.
+  useEffect(() => {
+    if (!inicial && direccion && direccion.trim().length >= 4) {
+      const t = setTimeout(() => buscar(direccion, false, true), 400);
+      return () => clearTimeout(t);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function usarMiUbicacion() {
     setAviso("");
     if (!navigator.geolocation) return setAviso("Tu celular no permite ubicarte automáticamente. Tocá el mapa para marcar tu casa.");
@@ -82,7 +181,40 @@ export default function MapaEnvio({ sucursal, zonas, inicial, onConfirmar, onCer
             ✕
           </button>
         </div>
-        <p className="px-5 text-xs text-[var(--tinta-suave)] mb-2">Tocá el mapa donde vivís o arrastrá el pin 📍. Podés acercar con dos dedos.</p>
+        <div className="px-5 mb-2 relative">
+          <div className="flex gap-2">
+            <input
+              value={texto}
+              onChange={(e) => {
+                setElegida(false);
+                setTexto(e.target.value);
+              }}
+              onKeyDown={(e) => e.key === "Enter" && buscar(texto, true, false)}
+              placeholder="Escribí tu dirección (calle y número)"
+              className="flex-1 min-w-0 h-11 px-3 rounded-xl border border-[var(--borde)] bg-white text-sm outline-none"
+              autoComplete="off"
+            />
+            <button onClick={() => buscar(texto, true, false)} className="h-11 px-4 rounded-xl bg-[var(--verde)] text-white text-sm font-semibold">
+              {buscando ? "..." : "Buscar"}
+            </button>
+          </div>
+          {sugerencias.length > 0 && !elegida && (
+            <div className="absolute left-5 right-5 top-12 z-10 bg-white border border-[var(--borde)] rounded-xl shadow-lg overflow-hidden">
+              {sugerencias.map((r, i) => (
+                <button key={i} onClick={() => elegir(r)} className="w-full text-left px-3 py-2.5 border-b border-[var(--borde)] last:border-0 hover:bg-[var(--fondo-suave)]">
+                  <span className="block text-sm font-semibold leading-tight">{r.titulo}</span>
+                  {r.resto && <span className="block text-xs text-[var(--tinta-suave)]">{r.resto}</span>}
+                </button>
+              ))}
+            </div>
+          )}
+          {sinResultados && !elegida && !buscando && texto.trim().length >= 4 && (
+            <p className="text-xs text-[var(--tinta-suave)] mt-1">No encontramos esa dirección. Probá con otro formato o tocá el mapa donde vivís.</p>
+          )}
+        </div>
+        <p className="px-5 text-xs text-[var(--tinta-suave)] mb-2">
+          {elegida && pos ? "📍 ¿Es acá donde vivís? Si no, arrastrá el pin o tocá el mapa en el lugar exacto." : "Tocá el mapa donde vivís o arrastrá el pin 📍. Podés acercar con dos dedos."}
+        </p>
         <div ref={caja} className="relative z-0 w-full h-[46vh] bg-[var(--fondo-suave)]" />
         <div className="p-4">
           {aviso && <p className="text-xs text-red-700 mb-2">{aviso}</p>}
