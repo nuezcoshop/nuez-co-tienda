@@ -1303,8 +1303,9 @@ function Pedido({ bolsa, lineas, total, config, agregar, quitar, vaciar, cerrar 
     // Guardamos el pedido en el sistema de la tienda. Si falla (sin señal, etc.), igual seguimos por WhatsApp.
     setEnviando(true);
     let numeroPedido = null;
+    let tokenPedido = null;
     try {
-      const guardar = supabase.rpc("crear_pedido_online", {
+      const guardar = supabase.rpc("crear_pedido_online_v2", {
         p: {
           nombre: nombre.trim(),
           telefono: telefono.trim(),
@@ -1336,12 +1337,16 @@ function Pedido({ bolsa, lineas, total, config, agregar, quitar, vaciar, cerrar 
         setEnviando(false);
         return setError("El cupón no se pudo usar. Revisalo y volvé a enviar el pedido.");
       }
-      if (!errPedido && data) numeroPedido = data;
+      if (!errPedido && data) {
+        numeroPedido = typeof data === "object" ? data.id : data;
+        tokenPedido = typeof data === "object" ? data.token : null;
+      }
     } catch (e) {
       // seguimos sin número de pedido
     }
     setEnviando(false);
 
+    const enlaceSeguimiento = tokenPedido ? `${window.location.origin}/pedido/${tokenPedido}` : null;
     const texto = [
       `Hola ${config.nombre}! Quiero hacer este pedido${numeroPedido ? ` (Pedido #${numeroPedido})` : ""}:`,
       "",
@@ -1356,13 +1361,14 @@ function Pedido({ bolsa, lineas, total, config, agregar, quitar, vaciar, cerrar 
       `Nombre: ${nombre.trim()}`,
       `Teléfono: ${telefono.trim()}`,
       notas.trim() ? `Notas: ${notas.trim()}` : null,
+      enlaceSeguimiento ? `\nSeguí tu pedido acá: ${enlaceSeguimiento}` : null,
     ]
       .filter((x) => x !== null)
       .join("\n");
 
     const urlWhatsApp = `https://wa.me/${config.whatsapp}?text=${encodeURIComponent(texto)}`;
     // Pedido enviado: se vacía el carrito y se muestra la confirmación, para que nadie lo repita por error.
-    setPedidoEnviado({ numero: numeroPedido, url: urlWhatsApp });
+    setPedidoEnviado({ numero: numeroPedido, url: urlWhatsApp, seguimiento: enlaceSeguimiento });
     vaciar();
     setTimeout(() => {
       window.location.href = urlWhatsApp;
@@ -1379,7 +1385,12 @@ function Pedido({ bolsa, lineas, total, config, agregar, quitar, vaciar, cerrar 
           <p className="text-sm text-[var(--tinta-suave)] mt-3">
             Recibimos tu pedido. Te confirmamos por WhatsApp el stock, el total y la entrega. ¡Gracias por elegirnos!
           </p>
-          <a href={pedidoEnviado.url} className="mt-5 block w-full h-12 leading-[3rem] rounded-xl border border-[var(--borde)] text-sm font-semibold">
+          {pedidoEnviado.seguimiento && (
+            <a href={pedidoEnviado.seguimiento} className="mt-4 block w-full h-12 leading-[3rem] rounded-xl bg-[var(--verde-claro)] text-[var(--verde)] text-sm font-semibold">
+              Ver el estado de mi pedido
+            </a>
+          )}
+          <a href={pedidoEnviado.url} className="mt-3 block w-full h-12 leading-[3rem] rounded-xl border border-[var(--borde)] text-sm font-semibold">
             Si no se abrió WhatsApp, tocá acá
           </a>
           <button onClick={cerrar} className="mt-3 w-full h-14 rounded-2xl bg-[var(--acento)] text-[var(--sobre-acento)] font-bold">
