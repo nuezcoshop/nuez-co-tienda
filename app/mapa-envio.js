@@ -98,10 +98,9 @@ export default function MapaEnvio({ sucursal, zonas, inicial, direccion, onConfi
     const centro = inicial || sucursal || { lat: -33.1307, lng: -64.3499 };
     const m = L.map(caja.current, { zoomControl: true, attributionControl: true }).setView([centro.lat, centro.lng], inicial ? 16 : 14);
     mapa.current = m;
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
-      subdomains: "abcd",
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     }).addTo(m);
     m.on("click", (e) => ponerPin({ lat: e.latlng.lat, lng: e.latlng.lng }, false));
     if (inicial) ponerPin(inicial, false);
