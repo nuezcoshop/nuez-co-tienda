@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase";
-import { coloresDesde } from "@/lib/colores";
+import { coloresDesde, esHex } from "@/lib/colores";
 import { limpiarEscalones } from "./escalones";
 import Tienda from "./tienda";
 import Popup from "./popup";
