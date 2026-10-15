@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { coloresDesde } from "@/lib/colores";
 
 const money = (n) => "$" + Math.round(Number(n) || 0).toLocaleString("es-AR");
 
@@ -16,6 +17,7 @@ export default function Seguimiento({ params }) {
   const [pedido, setPedido] = useState(undefined); // undefined = cargando, null = no existe
   const [whatsapp, setWhatsapp] = useState(String(process.env.NEXT_PUBLIC_WHATSAPP || "").replace(/\D/g, ""));
   const [fallo, setFallo] = useState(false);
+  const [tema, setTema] = useState(null); // colores y logo de la tienda
 
   async function cargar() {
     try {
@@ -31,12 +33,14 @@ export default function Seguimiento({ params }) {
 
   useEffect(() => {
     cargar();
-    supabase
-      .from("tienda_config")
-      .select("whatsapp")
-      .eq("id", 1)
-      .maybeSingle()
-      .then(({ data }) => data?.whatsapp && setWhatsapp(String(data.whatsapp).replace(/\D/g, "")));
+    (async () => {
+      try {
+        const { data } = await supabase.from("tienda_config").select("*").eq("id", 1).maybeSingle();
+        if (!data) return;
+        if (data.whatsapp) setWhatsapp(String(data.whatsapp).replace(/\D/g, ""));
+        setTema({ colores: coloresDesde(data.color_principal, data.color_fondo, data.color_acento), logo: data.logo_url || "", nombre: data.nombre || "Nuez Co" });
+      } catch (e) {}
+    })();
     const t = setInterval(() => document.visibilityState === "visible" && cargar(), 30000);
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -52,9 +56,15 @@ export default function Seguimiento({ params }) {
   const actual = estado === "entregado" ? 2 : estado === "preparado" ? 1 : 0;
 
   return (
-    <main className="min-h-screen bg-[var(--fondo)] text-[var(--tinta)]">
+    <main style={tema ? tema.colores : undefined} className="min-h-screen bg-[var(--fondo)] text-[var(--tinta)]">
       <div className="max-w-md mx-auto px-5 py-8">
-        <p className="text-center text-2xl font-extrabold text-[var(--verde)] mb-1">Nuez Co</p>
+        <div className="flex justify-center mb-2 min-h-[3.5rem]">
+          {tema?.logo ? (
+            <img src={tema.logo} alt={tema.nombre} className="h-14 w-auto max-w-[220px] object-contain" />
+          ) : (
+            <p className="text-2xl font-extrabold text-[var(--verde)]">{tema ? tema.nombre : ""}</p>
+          )}
+        </div>
         <h1 className="text-center text-sm font-semibold text-[var(--tinta-suave)] mb-6">Seguimiento de tu pedido</h1>
 
         {pedido === undefined && <p className="text-center text-sm text-[var(--tinta-suave)]">Cargando…</p>}
