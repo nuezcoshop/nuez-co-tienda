@@ -1078,6 +1078,19 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
             );
           })()}
 
+          {item.es_combo && Array.isArray(item.combo_detalle) && item.combo_detalle.length > 0 && (
+            <div className="mt-3 rounded-xl bg-[var(--fondo-suave,rgba(0,0,0,0.04))] p-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--tinta-suave)] mb-1.5">Incluye</p>
+              <ul className="text-sm space-y-0.5">
+                {item.combo_detalle.map((c, i) => (
+                  <li key={i}>
+                    • {c.unidad === "kg" ? formatoCantidad(Number(c.cantidad), "kg") : Number(c.cantidad) + " ×"} {c.nombre}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {item.tipo === "variantes" && (
             <div className="flex flex-wrap gap-2 mt-3">
               {opciones.map((v) => {
