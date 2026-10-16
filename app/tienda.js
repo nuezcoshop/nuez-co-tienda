@@ -1066,10 +1066,23 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
         </div>
 
         <div className="p-5 pb-3 overflow-y-auto min-h-0 flex-1">
-          <div className="flex items-start justify-between gap-3">
-            <h2 className="text-xl font-bold leading-snug flex-1 min-w-0">{item.nombre}</h2>
-            {item.categoria && <p className="text-xs font-medium text-[var(--tinta-suave)] uppercase tracking-wide shrink-0 text-right pt-1.5">{item.categoria}</p>}
-          </div>
+          {(() => {
+            // Título largo = prioridad: ocupa todo el ancho y la categoría baja debajo.
+            // Título corto y categoría corta: la categoría queda a la derecha, partida en renglones si hace falta.
+            const largo = (item.nombre || "").length > 22 || (item.categoria || "").length > 14;
+            const cat = item.categoria ? <p className={`text-xs font-medium text-[var(--tinta-suave)] uppercase tracking-wide ${largo ? "mt-1" : "shrink-0 max-w-[38%] text-right pt-1.5"}`}>{item.categoria}</p> : null;
+            return largo ? (
+              <div>
+                <h2 className="text-xl font-bold leading-snug">{item.nombre}</h2>
+                {cat}
+              </div>
+            ) : (
+              <div className="flex items-start justify-between gap-3">
+                <h2 className="text-xl font-bold leading-snug flex-1 min-w-0">{item.nombre}</h2>
+                {cat}
+              </div>
+            );
+          })()}
           {(() => {
             const texto = item.descripcion || (opciones.find((o) => o.descripcion) || {}).descripcion;
             if (!texto) return null;
