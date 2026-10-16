@@ -1169,18 +1169,24 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
                 ))}
               </div>
             )}
-            {sugerencia ? (
+            {ahorroActual > 0 && (
+              <p className="text-xs text-[var(--verde)] font-semibold mt-2">¡Con esta cantidad ya ahorrás {money(ahorroActual)}!</p>
+            )}
+            {sugerencia && (
               <button
                 onClick={() => setCant(sugerencia.cantidad)}
                 className="mt-2 w-full text-left text-xs rounded-xl bg-[var(--verde-claro)] text-[var(--verde)] px-3 py-2 leading-snug"
               >
-                Por <b>{money(sugerencia.extra)}</b> más, llevás <b>{formatoCantidad(sugerencia.cantidad, esPeso ? "kg" : "un")}</b> y ahorrás{" "}
-                <b>{money(sugerencia.ahorroPorUnidad)}</b> {esPeso ? "por kilo" : "por unidad"}.
+                Sumá <b>{money(sugerencia.extra)}</b> más y llevás <b>{formatoCantidad(sugerencia.cantidad, esPeso ? "kg" : "un")}</b>
+                {sugerencia.ahorroTotal > 0 ? (
+                  <>
+                    : ¡ahorrás <b>{money(sugerencia.ahorroTotal)}</b>!
+                  </>
+                ) : (
+                  "."
+                )}{" "}
+                <span className="opacity-80">({money(sugerencia.ahorroPorUnidad)} menos {esPeso ? "por kilo" : "por unidad"})</span>
               </button>
-            ) : (
-              ahorroActual > 0 && (
-                <p className="text-xs text-[var(--verde)] font-medium mt-2">Con esta cantidad ahorrás {money(ahorroActual)} por el precio por cantidad.</p>
-              )
             )}
             {cant + paso > max + 1e-9 && <p className="text-xs text-[var(--tinta-suave)] mt-2">Es el máximo disponible por ahora.</p>}
             {yaEnCarrito > 0 && (
