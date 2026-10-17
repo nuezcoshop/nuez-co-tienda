@@ -7,7 +7,7 @@ import Visitas from "./visitas";
 
 // La página se genera en el servidor y se refresca sola cada 60 segundos:
 // carga rápido en el celular y no consulta la base en cada visita.
-export const revalidate = 60;
+export const revalidate = 15;
 
 const enlacePopup = (l) => {
   const t = String(l || "").trim();

@@ -89,10 +89,14 @@ function IconoLupa() {
 export default function Tienda({ productos, banners, destacados = [], config, fotosCategorias = {}, hayError }) {
   // La bolsa de regalo no se vende como producto del catálogo: se ofrece dentro del carrito (ver "bolsa" más abajo).
   const bolsaId = config.bolsa && config.bolsa.productoId ? config.bolsa.productoId : "";
+  // Stock en vivo: la página puede tener hasta ~1 minuto de atraso, así que se consulta el stock real
+  // al abrir la tienda, al volver a la pestaña, cada tanto, al abrir un producto/carrito y antes de enviar el pedido.
+  const [vivo, setVivo] = useState({});
+  const productosVivos = useMemo(() => productos.map((p) => (vivo[p.id] ? { ...p, ...vivo[p.id] } : p)), [productos, vivo]);
   const { items, porId } = useMemo(() => {
-    const c = armarCatalogo(productos);
+    const c = armarCatalogo(productosVivos);
     return bolsaId ? { ...c, items: c.items.filter((i) => String(i.id) !== bolsaId) } : c;
-  }, [productos, bolsaId]);
+  }, [productosVivos, bolsaId]);
   const [carrito, setCarrito] = useState({}); // { productoId: cantidad }
   const [listo, setListo] = useState(false);
   const [busqueda, setBusqueda] = useState("");
@@ -192,6 +196,78 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
     const t = setTimeout(() => setAviso(""), 2200);
     return () => clearTimeout(t);
   }, [aviso]);
+
+  const carritoRef = useRef({});
+  carritoRef.current = carrito;
+  const refrescando = useRef(null);
+  const ultimoRefresco = useRef(0);
+
+  // Trae el stock real ahora. Devuelve los ajustes que hizo al carrito: [{ nombre, max }].
+  async function refrescarStock(forzar) {
+    if (refrescando.current) return refrescando.current;
+    if (!forzar && Date.now() - ultimoRefresco.current < 4000) return [];
+    refrescando.current = (async () => {
+      const ajustes = [];
+      try {
+        const { data, error } = await supabase.from("tienda_productos").select("id, stock_total, stock_ingrediente");
+        if (error || !Array.isArray(data)) return ajustes;
+        ultimoRefresco.current = Date.now();
+        const mapa = {};
+        data.forEach((r) => (mapa[r.id] = { stock_total: r.stock_total, stock_ingrediente: r.stock_ingrediente }));
+        // Si no cambió nada, no se vuelve a dibujar la tienda.
+        setVivo((prev) => {
+          const igual = data.every((r) => prev[r.id] && prev[r.id].stock_total === r.stock_total && prev[r.id].stock_ingrediente === r.stock_ingrediente);
+          return igual && Object.keys(prev).length === data.length ? prev : mapa;
+        });
+        // Ajusta el carrito a lo que realmente hay.
+        const base = {};
+        productos.forEach((p) => (base[p.id] = { ...p, ...(mapa[p.id] || {}) }));
+        const nuevo = { ...carritoRef.current };
+        let cambio = false;
+        Object.entries(nuevo).forEach(([id, c]) => {
+          const row = base[id];
+          const max = row ? disponible(row) : 0;
+          if (!row || Number(c) > max + 1e-9) {
+            ajustes.push({ nombre: row ? row.nombre : "un producto", max });
+            if (max > 0) nuevo[id] = redondear(max);
+            else delete nuevo[id];
+            cambio = true;
+          }
+        });
+        if (cambio) {
+          setCarrito(nuevo);
+          const a = ajustes[0];
+          setAviso(a.max > 0 ? `Actualizamos tu pedido: de ${a.nombre} quedan ${a.max}` : `${a.nombre} se agotó y lo sacamos de tu pedido`);
+        }
+      } catch (e) {
+        // sin señal: se sigue con el stock que ya había
+      } finally {
+        refrescando.current = null;
+      }
+      return ajustes;
+    })();
+    return refrescando.current;
+  }
+
+  useEffect(() => {
+    refrescarStock(true);
+    const alVolver = () => document.visibilityState === "visible" && refrescarStock(false);
+    document.addEventListener("visibilitychange", alVolver);
+    window.addEventListener("focus", alVolver);
+    const t = setInterval(() => document.visibilityState === "visible" && refrescarStock(false), 30000);
+    return () => {
+      document.removeEventListener("visibilitychange", alVolver);
+      window.removeEventListener("focus", alVolver);
+      clearInterval(t);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Al abrir un producto o el carrito, se pide el stock otra vez.
+  useEffect(() => {
+    if (detalle || carritoAbierto) refrescarStock(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [detalle, carritoAbierto]);
 
   function agregar(id, cantidad) {
     const row = porId[id];
@@ -621,7 +697,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
 
       {detalle && (
         <Detalle
-          item={detalle}
+          item={items.find((i) => i.id === detalle.id) || detalle}
           porId={porId}
           carrito={carrito}
           cerrar={() => setDetalle(null)}
@@ -642,6 +718,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
           agregar={agregar}
           quitar={quitar}
           vaciar={() => setCarrito({})}
+          refrescarStock={() => refrescarStock(true)}
           cerrar={() => setCarritoAbierto(false)}
         />
       )}
@@ -1032,6 +1109,11 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
   const yaEnCarrito = carrito[opcion.id] || 0;
   const inicial = esPeso ? Math.min(Math.max(paso, 0.1 - ((0.1 % paso) || 0)), max) : 1;
   const [cant, setCant] = useState(inicial);
+  // Si el stock baja mientras el cliente mira el producto, la cantidad elegida se ajusta sola.
+  useEffect(() => {
+    if (max > 0 && cant > max + 1e-9) setCant(max);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [max]);
   const [verMas, setVerMas] = useState(false);
 
   function elegirOpcion(id) {
@@ -1226,7 +1308,7 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
   );
 }
 
-function Pedido({ bolsa, lineas, total, config, agregar, quitar, vaciar, cerrar }) {
+function Pedido({ bolsa, lineas, total, config, agregar, quitar, vaciar, refrescarStock, cerrar }) {
   const [entrega, setEntrega] = useState("retiro");
   const [nombre, setNombre] = useState("");
   const [direccion, setDireccion] = useState("");
@@ -1335,6 +1417,19 @@ function Pedido({ bolsa, lineas, total, config, agregar, quitar, vaciar, cerrar 
     if (entrega === "envio" && !hayMapa && !direccion.trim()) return setError("Escribí la dirección de entrega.");
     if (entrega === "envio" && hayMapa && !punto) return setError("Marcá en el mapa dónde lo llevamos.");
     if (!config.whatsapp) return setError("La tienda todavía no tiene un WhatsApp configurado.");
+
+    // Último control: stock real justo antes de enviar. Si cambió algo, se ajusta el pedido y se avisa.
+    setEnviando(true);
+    const ajustes = await refrescarStock();
+    setEnviando(false);
+    if (ajustes.length > 0) {
+      const a = ajustes[0];
+      return setError(
+        a.max > 0
+          ? `Mientras armabas tu pedido cambió el stock: de ${a.nombre} quedan ${a.max}. Ya ajustamos tu pedido, revisalo y confirmalo de nuevo.`
+          : `${a.nombre} se agotó recién y lo sacamos de tu pedido. Revisalo y confirmalo de nuevo.`
+      );
+    }
 
     try {
       window.localStorage.setItem("nuezco_cliente_v1", JSON.stringify({ nombre: nombre.trim(), telefono: telefono.trim(), direccion: direccion.trim(), punto }));
