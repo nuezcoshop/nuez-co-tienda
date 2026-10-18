@@ -560,8 +560,8 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
         </div>
       )}
 
-      <div className="max-w-5xl mx-auto px-4 md:max-w-none md:px-10">
-        <div className="grid grid-cols-[44px_1fr_44px] md:grid-cols-[1fr_auto_1fr] items-center py-3">
+      <div className={`cab-tienda ${esInicio && !ocultos.includes("banner") && bannersPrincipal.length > 0 ? "cab-sobre-banner " : ""}max-w-5xl mx-auto px-4 md:max-w-none md:px-10`}>
+        <div className="cab-grid grid grid-cols-[44px_1fr_44px] md:grid-cols-[1fr_auto_1fr] items-center py-3">
           <div className="flex items-center">
             <button
               onClick={() => setMenuAbierto(true)}
@@ -581,7 +581,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
           </div>
           <button onClick={irAInicio} aria-label="Ir al inicio" className="justify-self-center">
             {config.logo ? (
-              <img src={config.logo} alt={config.nombre} className="h-11 w-auto max-w-[200px] object-contain" />
+              <img src={config.logo} alt={config.nombre} className="cab-logo h-11 w-auto max-w-[200px] object-contain" />
             ) : (
               <h1 className="text-2xl font-extrabold text-[var(--verde)] tracking-tight">{config.nombre}</h1>
             )}
