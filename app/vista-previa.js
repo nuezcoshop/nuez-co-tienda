@@ -58,26 +58,48 @@ export default function VistaPrevia() {
     const resaltado = document.createElement("style");
     resaltado.textContent = `
       main:has(> [data-bloque]){display:flex;flex-direction:column}
+      .nz-tema button,.nz-tema a{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
       .nz-tema :is(${T}, .txt-desc, button:not(.tarjeta-prod)):hover{outline:2px dashed #14b8a6;outline-offset:2px;cursor:pointer}
       .nz-tema[data-sel="titulos"] :is(${T}){outline:2px solid #14b8a6;outline-offset:2px}
       .nz-tema[data-sel="textos"] .txt-desc{outline:2px solid #14b8a6;outline-offset:2px}
       .nz-tema[data-sel="botones"] button:not(.tarjeta-prod){outline:2px solid #14b8a6;outline-offset:2px}`;
     document.head.appendChild(resaltado);
 
+    function bloqueDe(el) {
+      if (el.closest(T)) return "titulos";
+      if (el.closest(".chip-tienda, .buscador-tienda")) return "bordes";
+      if (el.closest(".txt-desc")) return "textos";
+      if (el.closest("button:not(.tarjeta-prod), .btn-tienda, a")) return "botones";
+      return "general";
+    }
+    // Toque corto: funciona normal (navega) y deja seleccionado lo tocado.
+    // Mantener apretado: solo selecciona para editar, sin navegar ni ejecutar nada.
+    let suprimir = false;
+    let timer = null;
+    function alBajar(e) {
+      const el = e.target instanceof Element ? e.target : null;
+      if (!el || !el.closest(".nz-tema")) return;
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        suprimir = true;
+        window.parent.postMessage({ tipo: "nz-click", bloque: bloqueDe(el) }, "*");
+        setTimeout(() => { suprimir = false; }, 700);
+      }, 500);
+    }
+    function cancelar() { clearTimeout(timer); }
     function alTocar(e) {
       const el = e.target instanceof Element ? e.target : null;
       if (!el || !el.closest(".nz-tema")) return;
-      let bloque = "general";
-      if (el.closest(T)) bloque = "titulos";
-      else if (el.closest(".chip-tienda, .buscador-tienda")) bloque = "bordes";
-      else if (el.closest(".txt-desc")) bloque = "textos";
-      else if (el.closest("button:not(.tarjeta-prod), .btn-tienda, a")) bloque = "botones";
-      // Los enlaces de afuera no se abren; los botones (ir a la tienda, abrir un producto, etc.) funcionan para poder recorrer la tienda.
-      if (el.closest("a")) e.preventDefault();
-      // Los botones principales (ej: "Ir a la tienda") solo se seleccionan para editarlos, no se ejecutan.
-      if (el.closest(".btn-tienda")) { e.preventDefault(); e.stopPropagation(); }
-      window.parent.postMessage({ tipo: "nz-click", bloque }, "*");
+      cancelar();
+      if (suprimir) { e.preventDefault(); e.stopPropagation(); suprimir = false; return; }
+      if (el.closest("a")) e.preventDefault(); // los enlaces de afuera no se abren
+      window.parent.postMessage({ tipo: "nz-click", bloque: bloqueDe(el) }, "*");
     }
+    const sinMenu = (e) => e.preventDefault();
+    document.addEventListener("pointerdown", alBajar, true);
+    document.addEventListener("pointerup", cancelar, true);
+    document.addEventListener("pointercancel", cancelar, true);
+    document.addEventListener("contextmenu", sinMenu, true);
     document.addEventListener("click", alTocar, true);
 
     function alRecibir(e) {
@@ -90,6 +112,10 @@ export default function VistaPrevia() {
     return () => {
       window.removeEventListener("message", alRecibir);
       document.removeEventListener("click", alTocar, true);
+      document.removeEventListener("pointerdown", alBajar, true);
+      document.removeEventListener("pointerup", cancelar, true);
+      document.removeEventListener("pointercancel", cancelar, true);
+      document.removeEventListener("contextmenu", sinMenu, true);
       resaltado.remove();
     };
   }, []);
