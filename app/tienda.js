@@ -6,7 +6,7 @@ import { estadoEscalones, textoBeneficio } from "./escalones";
 import dynamic from "next/dynamic";
 import { costoEnvio, enlaceMapa } from "@/lib/envio";
 import { supabase } from "@/lib/supabase";
-import { ahorroPorCantidad, armarCatalogo, disponible, formatoCantidad, money, normalizarTexto, precioPorCantidad, sugerenciaTramo } from "@/lib/catalogo";
+import { ahorroPorCantidad, armarCatalogo, disponible, formatoCantidad, money, normalizarTexto, precioPorCantidad, promoNxM, sugerenciaTramo, totalPorCantidad } from "@/lib/catalogo";
 
 // El mapa se descarga recién cuando el cliente elige envío a domicilio: no pesa en la carga normal.
 const MapaEnvio = dynamic(() => import("./mapa-envio"), {
@@ -294,7 +294,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
       const row = porId[id];
       if (!row) return null;
       const precio = precioPorCantidad(row, cantidad);
-      return { id, row, cantidad, precio, subtotal: precio * cantidad };
+      return { id, row, cantidad, precio, subtotal: totalPorCantidad(row, cantidad) };
     })
     .filter(Boolean);
   const total = lineas.reduce((a, l) => a + l.subtotal, 0);
@@ -1083,7 +1083,10 @@ function Tarjeta({ item, carrito, abrir }) {
           <span className="absolute top-2 left-2 text-xs font-extrabold bg-[var(--verde)] text-[var(--fondo)] px-3 py-1 rounded-full">{etiqueta}</span>
         )}
         {!item.hayStock && <span className={`absolute ${abajo} left-2 text-[11px] font-semibold bg-[var(--tinta)] text-white px-2 py-1 rounded-full`}>Agotado</span>}
-        {item.hayStock && tieneTramos && (
+        {item.hayStock && promoNxM(item) && (
+          <span className={`absolute ${abajo} left-2 text-[11px] font-extrabold bg-[var(--amarillo)] text-[var(--tinta)] px-2 py-1 rounded-full`}>{promoNxM(item).texto}</span>
+        )}
+        {item.hayStock && !promoNxM(item) && tieneTramos && (
           <span className={`absolute ${abajo} left-2 text-[11px] font-semibold bg-[var(--amarillo)] text-[var(--tinta)] px-2 py-1 rounded-full`}>Precio por cantidad</span>
         )}
         {item.hayStock && combo.ahorro > 0 && (
@@ -1161,14 +1164,16 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
 
   // El precio por cantidad cuenta lo que ya hay en el carrito + lo que se está agregando.
   const precio = precioPorCantidad(opcion, redondear(yaEnCarrito + cant));
-  const subtotal = precio * cant;
+  const promo = promoNxM(opcion);
+  // Con promo NxM el precio del botón es lo que suma esta compra al pedido (total con lo que ya hay menos total que ya había).
+  const subtotal = promo ? totalPorCantidad(opcion, redondear(yaEnCarrito + cant)) - totalPorCantidad(opcion, yaEnCarrito) : precio * cant;
   const tramos = [...(opcion.tramos || [])].sort((a, b) => a.desde - b.desde);
   const unidadPrecio = esPeso ? " /100 g" : "";
   const atajos = ATAJOS_KG.filter((m) => m <= max + 1e-9 && m >= paso - 1e-9 && Math.abs(m / paso - Math.round(m / paso)) < 1e-6);
   const mostrar = (p) => (esPeso ? money(p / 10) : money(p));
   const totalCant = redondear(yaEnCarrito + cant);
   const ahorroActual = ahorroPorCantidad(opcion, totalCant);
-  const sugerencia = tramos.length > 0 ? sugerenciaTramo(opcion, totalCant, cant, paso, max) : null;
+  const sugerencia = tramos.length > 0 && !promo ? sugerenciaTramo(opcion, totalCant, cant, paso, max) : null;
 
   return (
     <div className="fundir fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center" onClick={cerrar}>
@@ -1269,7 +1274,12 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
             {mostrar(precio)}
             <span className="text-sm font-semibold text-[var(--tinta-suave)]">{unidadPrecio}</span>
           </p>
-          {tramos.length > 0 && (
+          {promo && (
+            <p className="text-sm font-bold text-[var(--verde)] mt-1">
+              Promo {promo.texto}: llevando {promo.lleva} pagás {promo.paga}
+            </p>
+          )}
+          {tramos.length > 0 && !promo && (
             <p className="text-xs text-[var(--tinta-suave)] mt-1">
               Llevando más, baja el precio:{" "}
               {tramos.map((t) => `desde ${formatoCantidad(Number(t.desde), esPeso ? "kg" : "un")} ${mostrar(t.precio)}${unidadPrecio}`).join(" · ")}
@@ -1302,8 +1312,19 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
               </div>
             )}
             {ahorroActual > 0 && (
-              <p className="text-xs text-[var(--verde)] font-semibold mt-2">¡Con esta cantidad ya ahorrás {money(ahorroActual)}!</p>
+              <p className="text-xs text-[var(--verde)] font-semibold mt-2">
+                {promo ? `¡Promo ${promo.texto} aplicada! Ahorrás ${money(ahorroActual)}` : `¡Con esta cantidad ya ahorrás ${money(ahorroActual)}!`}
+              </p>
             )}
+            {promo && totalCant % promo.lleva !== 0 && (() => {
+              const falta = promo.lleva - (totalCant % promo.lleva);
+              if (cant + falta > max + 1e-9) return null;
+              return (
+                <button onClick={() => setCant(cant + falta)} className="mt-2 w-full text-left text-xs rounded-xl bg-[var(--verde-claro)] text-[var(--verde)] px-3 py-2 leading-snug">
+                  Sumá <b>{falta} más</b> y aprovechás la promo <b>{promo.texto}</b>.
+                </button>
+              );
+            })()}
             {sugerencia && (
               <button
                 onClick={() => setCant(sugerencia.cantidad)}
@@ -1652,7 +1673,7 @@ function Pedido({ bolsa, lineas, total, config, agregar, quitar, vaciar, refresc
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold leading-snug">{l.row.nombre}</p>
                   <p className="text-xs text-[var(--tinta-suave)] mt-0.5">
-                    {esKg ? formatoCantidad(l.cantidad, "kg") : `${l.cantidad} un.`} · {esKg ? por100(l.precio) : money(l.precio) + " c/u"}
+                    {esKg ? formatoCantidad(l.cantidad, "kg") : `${l.cantidad} un.`} · {esKg ? por100(l.precio) : promoNxM(l.row) && ahorroPorCantidad(l.row, l.cantidad) > 0 ? `Promo ${promoNxM(l.row).texto} aplicada` : money(promoNxM(l.row) ? l.row.precio_venta : l.precio) + " c/u"}
                   </p>
                   <button onClick={() => quitar(l.id)} className="text-xs text-[var(--tinta-suave)] underline mt-1 py-1" aria-label={`Eliminar ${l.row.nombre}`}>
                     Eliminar
