@@ -34,13 +34,41 @@ export default function VistaPrevia() {
       } else if (enlace) { enlace.remove(); enlace = null; }
     }
 
+    // Resaltado de lo que se puede tocar y de lo que está seleccionado en el editor.
+    const T = "h1, h2:not(.sin-tema), h3, .t-titulo";
+    const resaltado = document.createElement("style");
+    resaltado.textContent = `
+      .nz-tema :is(${T}, .txt-desc, button):hover{outline:2px dashed #14b8a6;outline-offset:2px;cursor:pointer}
+      .nz-tema[data-sel="titulos"] :is(${T}){outline:2px solid #14b8a6;outline-offset:2px}
+      .nz-tema[data-sel="textos"] .txt-desc{outline:2px solid #14b8a6;outline-offset:2px}
+      .nz-tema[data-sel="botones"] :is(button){outline:2px solid #14b8a6;outline-offset:2px}`;
+    document.head.appendChild(resaltado);
+
+    function alTocar(e) {
+      const el = e.target instanceof Element ? e.target : null;
+      if (!el || !el.closest(".nz-tema")) return;
+      let bloque = "general";
+      if (el.closest(T)) bloque = "titulos";
+      else if (el.closest(".txt-desc")) bloque = "textos";
+      else if (el.closest("button, .btn-tienda, a")) bloque = "botones";
+      e.preventDefault();
+      e.stopPropagation();
+      window.parent.postMessage({ tipo: "nz-click", bloque }, "*");
+    }
+    document.addEventListener("click", alTocar, true);
+
     function alRecibir(e) {
-      if (e.source !== window.parent || !e.data || e.data.tipo !== "nz-preview") return;
-      aplicar(e.data.datos);
+      if (e.source !== window.parent || !e.data) return;
+      if (e.data.tipo === "nz-preview") aplicar(e.data.datos);
+      if (e.data.tipo === "nz-sel" && raiz) raiz.dataset.sel = e.data.bloque || "";
     }
     window.addEventListener("message", alRecibir);
     window.parent.postMessage({ tipo: "nz-listo" }, "*");
-    return () => window.removeEventListener("message", alRecibir);
+    return () => {
+      window.removeEventListener("message", alRecibir);
+      document.removeEventListener("click", alTocar, true);
+      resaltado.remove();
+    };
   }, []);
   return null;
 }
