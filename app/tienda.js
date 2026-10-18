@@ -602,7 +602,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
               placeholder="Buscar productos…"
-              className="w-full h-12 pl-12 pr-4 rounded-full bg-transparent border-2 border-[var(--verde)] text-[var(--verde)] font-semibold placeholder:text-[var(--verde)] placeholder:opacity-70 placeholder:font-medium outline-none text-base"
+              className="buscador-tienda w-full h-12 pl-12 pr-4 rounded-full bg-transparent border-2 border-[var(--verde)] text-[var(--verde)] font-semibold placeholder:text-[var(--verde)] placeholder:opacity-70 placeholder:font-medium outline-none text-base"
             />
           </div>
         </div>
@@ -829,7 +829,7 @@ function CirculoCategoria({ nombre, activo, onClick }) {
     <button
       ref={ref}
       onClick={onClick}
-      className={`shrink-0 h-11 px-5 rounded-full border-2 border-[var(--verde)] font-extrabold text-[15px] whitespace-nowrap transition-colors ${
+      className={`chip-tienda shrink-0 h-11 px-5 rounded-full border-2 border-[var(--verde)] font-extrabold text-[15px] whitespace-nowrap transition-colors ${
         activo ? "bg-[var(--acento)] text-[var(--sobre-acento)]" : "bg-transparent text-[var(--verde)]"
       }`}
     >

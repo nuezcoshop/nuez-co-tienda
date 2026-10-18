@@ -69,6 +69,7 @@ export default function VistaPrevia() {
       if (!el || !el.closest(".nz-tema")) return;
       let bloque = "general";
       if (el.closest(T)) bloque = "titulos";
+      else if (el.closest(".chip-tienda, .buscador-tienda")) bloque = "bordes";
       else if (el.closest(".txt-desc")) bloque = "textos";
       else if (el.closest("button:not(.tarjeta-prod), .btn-tienda, a")) bloque = "botones";
       // Los enlaces de afuera no se abren; los botones (ir a la tienda, abrir un producto, etc.) funcionan para poder recorrer la tienda.
