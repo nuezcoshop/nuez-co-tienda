@@ -437,6 +437,93 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
       .map(([titulo, its]) => ({ titulo, items: its }));
   }
 
+  // Bloques de la página de inicio: el orden y cuáles se ven se eligen en el POS (Tienda online).
+  const ORDEN_BASE = ["destacados", "banners", "nosotros", "visitanos"];
+  const cfgB = config.bloquesInicio || {};
+  const ordenInicio = [...(Array.isArray(cfgB.orden) ? cfgB.orden.filter((b) => ORDEN_BASE.includes(b)) : []), ...ORDEN_BASE].filter((b, i, a) => a.indexOf(b) === i);
+  const ocultos = Array.isArray(cfgB.ocultos) ? cfgB.ocultos : [];
+  const bloquesInicio = {
+    destacados: (
+      <>
+        {esInicio && productosDestacados.length > 0 && (
+          <section className="mt-6 rev">
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <h2 className="esc-tl text-lg font-bold text-[var(--verde)]"><Escalera texto={config.destacadosTitulo} /></h2>
+              <button onClick={irATienda} className="btn-tienda shrink-0 h-9 px-4 rounded-full border-2 border-[var(--verde)] bg-[var(--acento)] text-[var(--sobre-acento)] text-sm font-semibold active:scale-[0.93] transition-transform">
+                Ir a la tienda →
+              </button>
+            </div>
+            <CarruselFavoritos items={productosDestacados} carrito={carrito} abrir={(item) => setDetalle(item)} />
+          </section>
+        )}
+        {esInicio && productosDestacados.length === 0 && (
+          <div className="mt-6 text-center">
+            <button onClick={irATienda} className="btn-tienda h-12 px-8 rounded-full border-2 border-[var(--verde)] bg-[var(--acento)] text-[var(--sobre-acento)] font-semibold">
+              Ir a la tienda →
+            </button>
+          </div>
+        )}
+      </>
+    ),
+    banners: (
+      <>
+        {esInicio && bannersInicio.length > 0 && <div className="rev"><Banners banners={bannersInicio} sinBienvenida onEnlace={abrirEnlace} /></div>}
+      </>
+    ),
+    nosotros: (
+      <>
+        {esInicio && config.nosotros && config.nosotros.activo && (config.nosotros.texto || config.nosotros.foto || config.nosotros.subtitulo) && (
+          <Nosotros datos={config.nosotros} />
+        )}
+      </>
+    ),
+    visitanos: (
+      <>
+        {esInicio && (config.direccion || enlaceUbicacion || enlaceContacto || enlaceInstagram) && (
+          <section className="mt-10 text-center text-[var(--verde)] rev">
+            <h2 className="esc-tl text-xl font-extrabold"><Escalera texto="Visitá nuestra tienda" /></h2>
+            {config.direccion && <p className="text-base font-semibold mt-1">{config.direccion}</p>}
+            {enlaceUbicacion && (
+              <a
+                href={enlaceUbicacion}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-tienda mt-4 inline-flex items-center gap-2 h-11 px-5 rounded-full border-2 border-[var(--verde)] bg-[var(--acento)] text-[var(--sobre-acento)] text-sm font-semibold active:scale-[0.93] transition-transform"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                  <circle cx="12" cy="10" r="3" />
+                </svg>
+                Cómo llegar
+              </a>
+            )}
+            {(enlaceInstagram || enlaceContacto) && (
+              <div className="mt-5 flex items-center justify-center gap-5">
+                {enlaceInstagram && (
+                  <a href={enlaceInstagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="active:scale-90 transition-transform">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <rect x="2" y="2" width="20" height="20" rx="5" />
+                      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+                    </svg>
+                  </a>
+                )}
+                {enlaceContacto && (
+                  <a href={enlaceContacto} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" className="active:scale-90 transition-transform">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21" />
+                      <path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1" />
+                    </svg>
+                  </a>
+                )}
+              </div>
+            )}
+          </section>
+        )}
+      </>
+    ),
+  };
+
   return (
     <div className="min-h-screen pb-28 bg-[var(--fondo)]">
       {mensajesCinta.length > 0 && (
@@ -522,8 +609,8 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
       </div>
       )}
 
-      {esInicio && (
-        <div className="px-4 md:px-0">
+      {esInicio && !ocultos.includes("banner") && (
+        <div className="px-4 md:px-0" data-bloque="banner">
           <Banners banners={bannersPrincipal} nombre={config.nombre} bienvenida={config.bienvenida} grande onEnlace={abrirEnlace} />
         </div>
       )}
@@ -539,73 +626,9 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
         )}
 
 
-        {esInicio && productosDestacados.length > 0 && (
-          <section className="mt-6 rev">
-            <div className="flex items-center justify-between gap-3 mb-3">
-              <h2 className="esc-tl text-lg font-bold text-[var(--verde)]"><Escalera texto={config.destacadosTitulo} /></h2>
-              <button onClick={irATienda} className="btn-tienda shrink-0 h-9 px-4 rounded-full border-2 border-[var(--verde)] bg-[var(--acento)] text-[var(--sobre-acento)] text-sm font-semibold active:scale-[0.93] transition-transform">
-                Ir a la tienda →
-              </button>
-            </div>
-            <CarruselFavoritos items={productosDestacados} carrito={carrito} abrir={(item) => setDetalle(item)} />
-          </section>
-        )}
-
-        {esInicio && productosDestacados.length === 0 && (
-          <div className="mt-6 text-center">
-            <button onClick={irATienda} className="btn-tienda h-12 px-8 rounded-full border-2 border-[var(--verde)] bg-[var(--acento)] text-[var(--sobre-acento)] font-semibold">
-              Ir a la tienda →
-            </button>
-          </div>
-        )}
-
-        {esInicio && bannersInicio.length > 0 && <div className="rev"><Banners banners={bannersInicio} sinBienvenida onEnlace={abrirEnlace} /></div>}
-
-        {esInicio && config.nosotros && config.nosotros.activo && (config.nosotros.texto || config.nosotros.foto || config.nosotros.subtitulo) && (
-          <Nosotros datos={config.nosotros} />
-        )}
-
-        {esInicio && (config.direccion || enlaceUbicacion || enlaceContacto || enlaceInstagram) && (
-          <section className="mt-10 text-center text-[var(--verde)] rev">
-            <h2 className="esc-tl text-xl font-extrabold"><Escalera texto="Visitá nuestra tienda" /></h2>
-            {config.direccion && <p className="text-base font-semibold mt-1">{config.direccion}</p>}
-            {enlaceUbicacion && (
-              <a
-                href={enlaceUbicacion}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-tienda mt-4 inline-flex items-center gap-2 h-11 px-5 rounded-full border-2 border-[var(--verde)] bg-[var(--acento)] text-[var(--sobre-acento)] text-sm font-semibold active:scale-[0.93] transition-transform"
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
-                  <circle cx="12" cy="10" r="3" />
-                </svg>
-                Cómo llegar
-              </a>
-            )}
-            {(enlaceInstagram || enlaceContacto) && (
-              <div className="mt-5 flex items-center justify-center gap-5">
-                {enlaceInstagram && (
-                  <a href={enlaceInstagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="active:scale-90 transition-transform">
-                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <rect x="2" y="2" width="20" height="20" rx="5" />
-                      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-                      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
-                    </svg>
-                  </a>
-                )}
-                {enlaceContacto && (
-                  <a href={enlaceContacto} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" className="active:scale-90 transition-transform">
-                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21" />
-                      <path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1" />
-                    </svg>
-                  </a>
-                )}
-              </div>
-            )}
-          </section>
-        )}
+        {ordenInicio.filter((b) => !ocultos.includes(b)).map((b) => (
+          <div key={b} data-bloque={b}>{bloquesInicio[b]}</div>
+        ))}
 
         {hayError && (
           <p className="my-6 text-center text-sm text-[var(--tinta-suave)]">
@@ -1034,7 +1057,7 @@ function Tarjeta({ item, carrito, abrir }) {
     <button
       onClick={item.hayStock ? abrir : undefined}
       disabled={!item.hayStock}
-      className={`text-left bg-transparent flex flex-col gap-1 w-full active:scale-[0.97] transition-transform ${item.hayStock ? "" : "opacity-60"}`}
+      className={`tarjeta-prod text-left bg-transparent flex flex-col gap-1 w-full active:scale-[0.97] transition-transform ${item.hayStock ? "" : "opacity-60"}`}
     >
       <div className="aspect-square bg-transparent relative p-0.5">
         {item.foto_url ? (

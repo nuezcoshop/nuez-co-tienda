@@ -26,6 +26,16 @@ export default function VistaPrevia() {
       puestas.forEach((k) => { if (!(k in vars)) raiz.style.removeProperty(k); });
       Object.entries(vars).forEach(([k, v]) => raiz.style.setProperty(k, v));
       puestas = Object.keys(vars);
+      // Orden y visibilidad de los bloques del inicio, en vivo.
+      const b = d.bloques_inicio || {};
+      const base = ["destacados", "banners", "nosotros", "visitanos"];
+      const orden = [...(Array.isArray(b.orden) ? b.orden : []), ...base].filter((x, i, a) => base.includes(x) && a.indexOf(x) === i);
+      const ocultos = Array.isArray(b.ocultos) ? b.ocultos : [];
+      document.querySelectorAll("[data-bloque]").forEach((el) => {
+        const id = el.getAttribute("data-bloque");
+        el.style.display = ocultos.includes(id) ? "none" : "";
+        if (id !== "banner") el.style.order = String(orden.indexOf(id));
+      });
       estilo.textContent = tipo.css + (esHex(d.color_fondo) ? `\nhtml,body{background:${d.color_fondo}}` : "");
       const href = hrefFuentes(d);
       if (href) {
@@ -38,10 +48,11 @@ export default function VistaPrevia() {
     const T = "h1, h2:not(.sin-tema), h3, .t-titulo";
     const resaltado = document.createElement("style");
     resaltado.textContent = `
-      .nz-tema :is(${T}, .txt-desc, button):hover{outline:2px dashed #14b8a6;outline-offset:2px;cursor:pointer}
+      main:has(> [data-bloque]){display:flex;flex-direction:column}
+      .nz-tema :is(${T}, .txt-desc, button:not(.tarjeta-prod)):hover{outline:2px dashed #14b8a6;outline-offset:2px;cursor:pointer}
       .nz-tema[data-sel="titulos"] :is(${T}){outline:2px solid #14b8a6;outline-offset:2px}
       .nz-tema[data-sel="textos"] .txt-desc{outline:2px solid #14b8a6;outline-offset:2px}
-      .nz-tema[data-sel="botones"] :is(button){outline:2px solid #14b8a6;outline-offset:2px}`;
+      .nz-tema[data-sel="botones"] button:not(.tarjeta-prod){outline:2px solid #14b8a6;outline-offset:2px}`;
     document.head.appendChild(resaltado);
 
     function alTocar(e) {
@@ -50,9 +61,9 @@ export default function VistaPrevia() {
       let bloque = "general";
       if (el.closest(T)) bloque = "titulos";
       else if (el.closest(".txt-desc")) bloque = "textos";
-      else if (el.closest("button, .btn-tienda, a")) bloque = "botones";
-      e.preventDefault();
-      e.stopPropagation();
+      else if (el.closest("button:not(.tarjeta-prod), .btn-tienda, a")) bloque = "botones";
+      // Los enlaces de afuera no se abren; los botones (ir a la tienda, abrir un producto, etc.) funcionan para poder recorrer la tienda.
+      if (el.closest("a")) e.preventDefault();
       window.parent.postMessage({ tipo: "nz-click", bloque }, "*");
     }
     document.addEventListener("click", alTocar, true);

@@ -52,6 +52,7 @@ export default async function Page() {
     ubicacionLink: c.ubicacion_link || "",
     zonasEnvio: Array.isArray(c.zonas_envio) ? c.zonas_envio : [],
     categoriasOrden: Array.isArray(c.categorias_orden) ? c.categorias_orden.map(String) : [],
+    bloquesInicio: c.bloques_inicio && typeof c.bloques_inicio === "object" ? c.bloques_inicio : {},
     nosotros: {
       activo: !!c.nosotros_activo,
       titulo: c.nosotros_titulo || "Nuestra historia",
