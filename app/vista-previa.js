@@ -14,12 +14,21 @@ export default function VistaPrevia() {
 
     const raiz = document.querySelector(".nz-tema");
     let puestas = [];
+    let primera = false;
     let estilo = document.getElementById("nz-prev-css");
     if (!estilo) { estilo = document.createElement("style"); estilo.id = "nz-prev-css"; document.head.appendChild(estilo); }
     let enlace = document.getElementById("nz-prev-fuentes");
 
     function aplicar(d) {
       if (!raiz || !d) return;
+      if (!primera) {
+        // Primera vez: se desactivan los estilos guardados (si no, taparían lo que se prueba acá).
+        primera = true;
+        const guardado = document.getElementById("nz-tipo-css");
+        if (guardado && guardado.sheet) guardado.sheet.disabled = true;
+        raiz.removeAttribute("style");
+        raiz.style.setProperty("color", "var(--tinta)");
+      }
       const vars = { ...coloresDesde(d.color_principal, d.color_fondo, d.color_acento) };
       const tipo = tipografiaDesde(d);
       Object.assign(vars, tipo.vars);

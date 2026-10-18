@@ -76,7 +76,7 @@ export default async function Page() {
           <link rel="stylesheet" href={hrefTipo} />
         </>
       )}
-      {tipo.css && <style>{tipo.css}</style>}
+      {tipo.css && <style id="nz-tipo-css">{tipo.css}</style>}
     </>
   );
   const fotosCategorias = {};
