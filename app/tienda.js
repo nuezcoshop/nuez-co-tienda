@@ -543,7 +543,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
           <section className="mt-6 rev">
             <div className="flex items-center justify-between gap-3 mb-3">
               <h2 className="esc-tl text-lg font-bold text-[var(--verde)]"><Escalera texto={config.destacadosTitulo} /></h2>
-              <button onClick={irATienda} className="shrink-0 h-9 px-4 rounded-full border-2 border-[var(--verde)] bg-[var(--acento)] text-[var(--sobre-acento)] text-sm font-semibold active:scale-[0.93] transition-transform">
+              <button onClick={irATienda} className="btn-tienda shrink-0 h-9 px-4 rounded-full border-2 border-[var(--verde)] bg-[var(--acento)] text-[var(--sobre-acento)] text-sm font-semibold active:scale-[0.93] transition-transform">
                 Ir a la tienda →
               </button>
             </div>
@@ -553,7 +553,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
 
         {esInicio && productosDestacados.length === 0 && (
           <div className="mt-6 text-center">
-            <button onClick={irATienda} className="h-12 px-8 rounded-full border-2 border-[var(--verde)] bg-[var(--acento)] text-[var(--sobre-acento)] font-semibold">
+            <button onClick={irATienda} className="btn-tienda h-12 px-8 rounded-full border-2 border-[var(--verde)] bg-[var(--acento)] text-[var(--sobre-acento)] font-semibold">
               Ir a la tienda →
             </button>
           </div>
@@ -574,7 +574,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
                 href={enlaceUbicacion}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-4 inline-flex items-center gap-2 h-11 px-5 rounded-full border-2 border-[var(--verde)] bg-[var(--acento)] text-[var(--sobre-acento)] text-sm font-semibold active:scale-[0.93] transition-transform"
+                className="btn-tienda mt-4 inline-flex items-center gap-2 h-11 px-5 rounded-full border-2 border-[var(--verde)] bg-[var(--acento)] text-[var(--sobre-acento)] text-sm font-semibold active:scale-[0.93] transition-transform"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
@@ -652,7 +652,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
         <div className="fixed bottom-0 inset-x-0 z-40 p-3 bg-gradient-to-t from-[var(--fondo)] via-[var(--fondo)] to-transparent">
           <button
             onClick={() => setCarritoAbierto(true)}
-            className="max-w-5xl mx-auto w-full h-14 rounded-2xl bg-[var(--acento)] text-[var(--sobre-acento)] flex items-center justify-between px-5 shadow-lg active:scale-[0.99]"
+            className="btn-tienda max-w-5xl mx-auto w-full h-14 rounded-2xl bg-[var(--acento)] text-[var(--sobre-acento)] flex items-center justify-between px-5 shadow-lg active:scale-[0.99]"
           >
             <span className="font-semibold">
               Ver pedido ({cantidadLineas} {cantidadLineas === 1 ? "producto" : "productos"})
@@ -742,7 +742,7 @@ function Nosotros({ datos }) {
         <div className="p-5 text-[var(--verde)] rev">
           {datos.subtitulo && <h3 className="esc-tl text-xl font-extrabold leading-snug"><Escalera texto={datos.subtitulo} /></h3>}
           {datos.texto && (
-            <p className={`esc-tl text-sm mt-2 leading-relaxed whitespace-pre-line opacity-90 ${abierto ? "" : "line-clamp-3"}`}><Escalera texto={datos.texto} activo={!abierto} /></p>
+            <p className={`txt-desc esc-tl text-sm mt-2 leading-relaxed whitespace-pre-line opacity-90 ${abierto ? "" : "line-clamp-3"}`}><Escalera texto={datos.texto} activo={!abierto} /></p>
           )}
           {datos.texto && largo && (
             <button onClick={() => setAbierto(!abierto)} className="mt-3 h-10 px-5 rounded-full border-2 border-[var(--verde)] text-sm font-semibold" aria-expanded={abierto}>
@@ -836,7 +836,7 @@ function Banners({ banners, nombre, bienvenida, sinBienvenida, grande, onEnlace 
     return (
       <div className="mt-4 rounded-2xl bg-[var(--verde-claro)] px-5 py-7 text-center">
         <p className="text-xl font-bold text-[var(--verde)]">Bienvenido a {nombre}</p>
-        <p className="esc-tl text-sm text-[var(--tinta-suave)] mt-1"><Escalera texto={bienvenida || "Elegí tus productos y cerrá el pedido por WhatsApp."} /></p>
+        <p className="txt-desc esc-tl text-sm text-[var(--tinta-suave)] mt-1"><Escalera texto={bienvenida || "Elegí tus productos y cerrá el pedido por WhatsApp."} /></p>
       </div>
     );
   }
@@ -1058,7 +1058,7 @@ function Tarjeta({ item, carrito, abrir }) {
       </div>
       <div className="px-1 flex flex-col gap-1 flex-1 text-[var(--verde)]">
         <div className="min-h-[2.5rem] flex items-end">
-          <p className="text-[15px] font-extrabold leading-snug line-clamp-2">{item.nombre}</p>
+          <p className="t-titulo text-[15px] font-extrabold leading-snug line-clamp-2">{item.nombre}</p>
         </div>
         <div className="flex items-center justify-between">
           <p className="min-w-0 whitespace-nowrap text-[15px] font-extrabold">
@@ -1172,7 +1172,7 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
             return (
               <div className="mt-1.5">
                 <p
-                  className="text-sm text-[var(--tinta-suave)] leading-snug"
+                  className="txt-desc text-sm text-[var(--tinta-suave)] leading-snug"
                   style={!verMas && larga ? { display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" } : undefined}
                 >
                   {texto}
@@ -1297,7 +1297,7 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
           <button
             onClick={() => onAgregar(opcion.id, cant)}
             disabled={max <= 0}
-            className="w-full h-14 rounded-2xl bg-[var(--acento)] hover:brightness-95 text-[var(--sobre-acento)] font-bold flex items-center justify-between px-5 active:scale-[0.99] disabled:opacity-50"
+            className="btn-tienda w-full h-14 rounded-2xl bg-[var(--acento)] hover:brightness-95 text-[var(--sobre-acento)] font-bold flex items-center justify-between px-5 active:scale-[0.99] disabled:opacity-50"
           >
             <span>Agregar al carrito</span>
             <span>{money(subtotal)}</span>
@@ -1545,7 +1545,7 @@ function Pedido({ bolsa, lineas, total, config, agregar, quitar, vaciar, refresc
           <a href={pedidoEnviado.url} className="mt-3 block w-full h-12 leading-[3rem] rounded-xl border border-[var(--borde)] text-sm font-semibold">
             Si no se abrió WhatsApp, tocá acá
           </a>
-          <button onClick={cerrar} className="mt-3 w-full h-14 rounded-2xl bg-[var(--acento)] text-[var(--sobre-acento)] font-bold">
+          <button onClick={cerrar} className="btn-tienda mt-3 w-full h-14 rounded-2xl bg-[var(--acento)] text-[var(--sobre-acento)] font-bold">
             Seguir comprando
           </button>
         </div>
@@ -1671,7 +1671,7 @@ function Pedido({ bolsa, lineas, total, config, agregar, quitar, vaciar, refresc
                       setConfirmandoVaciar(false);
                       vaciar();
                     }}
-                    className="flex-1 h-11 rounded-xl bg-[var(--acento)] text-[var(--sobre-acento)] text-sm font-semibold"
+                    className="btn-tienda flex-1 h-11 rounded-xl bg-[var(--acento)] text-[var(--sobre-acento)] text-sm font-semibold"
                   >
                     Sí, vaciar
                   </button>
@@ -1802,7 +1802,7 @@ function Pedido({ bolsa, lineas, total, config, agregar, quitar, vaciar, refresc
                       type="button"
                       onClick={aplicarCupon}
                       disabled={validandoCupon || !cuponCodigo.trim()}
-                      className="h-12 px-5 rounded-xl bg-[var(--acento)] text-[var(--sobre-acento)] font-bold disabled:opacity-50"
+                      className="btn-tienda h-12 px-5 rounded-xl bg-[var(--acento)] text-[var(--sobre-acento)] font-bold disabled:opacity-50"
                     >
                       {validandoCupon ? "..." : "Aplicar"}
                     </button>

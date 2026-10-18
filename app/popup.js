@@ -52,7 +52,7 @@ export default function Popup({ titulo, boton, link, letraChica }) {
             <path d="M5 5l14 14M19 5L5 19" />
           </svg>
         </button>
-        {titulo && <h2 className="text-2xl sm:text-3xl font-extrabold leading-tight mb-6 whitespace-pre-line">{titulo}</h2>}
+        {titulo && <h2 className="sin-tema text-2xl sm:text-3xl font-extrabold leading-tight mb-6 whitespace-pre-line">{titulo}</h2>}
         {boton &&
           (link ? (
             <a href={link} target="_blank" rel="noopener noreferrer" onClick={cerrar} className={clase} style={estiloBoton}>

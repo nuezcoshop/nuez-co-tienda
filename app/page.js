@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { coloresDesde, esHex } from "@/lib/colores";
+import { tipografiaDesde, hrefFuentes } from "@/lib/tipografia";
 import { limpiarEscalones } from "./escalones";
 import Tienda from "./tienda";
 import Popup from "./popup";
@@ -61,13 +62,29 @@ export default async function Page() {
 
   // Color principal elegido en el sistema (si no hay, queda el verde de siempre).
   const colores = coloresDesde(c.color_principal, c.color_fondo, c.color_acento);
+  // Tipografía, tamaños y colores de texto (si no se eligió nada, no se agrega nada).
+  const tipo = tipografiaDesde(c);
+  const hrefTipo = hrefFuentes(c);
+  const estilosTipo = (
+    <>
+      {hrefTipo && (
+        <>
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+          <link rel="stylesheet" href={hrefTipo} />
+        </>
+      )}
+      {tipo.css && <style>{tipo.css}</style>}
+    </>
+  );
   const fotosCategorias = {};
   (catf.data || []).forEach((f) => (fotosCategorias[f.categoria] = f.url));
 
   // Tienda en pausa: se muestra solo el mensaje elegido en el sistema.
   if (c.pausa_activa) {
     return (
-      <div style={{ ...colores, color: "var(--tinta)" }}>
+      <div className="nz-tema" style={{ ...colores, ...tipo.vars, color: "var(--tinta)" }}>
+      {estilosTipo}
         {esHex(c.color_fondo) && <style>{`html,body{background:${c.color_fondo}}`}</style>}
         <main className="min-h-screen flex flex-col items-center justify-center text-center px-6" style={{ background: "var(--fondo, #fff)" }}>
           {config.logo && <img src={config.logo} alt={config.nombre} className="h-20 w-auto mb-6 object-contain" />}
@@ -85,7 +102,8 @@ export default async function Page() {
   const popupVigente = !!c.popup_activo && !!String(c.popup_titulo || "").trim() && (!c.popup_hasta || String(c.popup_hasta).slice(0, 10) >= hoy);
 
   return (
-    <div style={{ ...colores, color: "var(--tinta)" }}>
+    <div className="nz-tema" style={{ ...colores, ...tipo.vars, color: "var(--tinta)" }}>
+      {estilosTipo}
       <Visitas />
       {popupVigente && (
         <Popup titulo={String(c.popup_titulo).trim()} boton={String(c.popup_boton || "").trim()} link={enlacePopup(c.popup_link)} letraChica={String(c.popup_letra_chica || "").trim()} />
