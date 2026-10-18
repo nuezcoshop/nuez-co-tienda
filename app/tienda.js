@@ -624,7 +624,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
       )}
 
       {esInicio && !ocultos.includes("banner") && (
-        <div className="px-4 md:px-0" data-bloque="banner">
+        <div className="banner-principal px-4 md:px-0" data-bloque="banner">
           <Banners banners={bannersPrincipal} nombre={config.nombre} bienvenida={config.bienvenida} grande onEnlace={abrirEnlace} />
         </div>
       )}
@@ -657,7 +657,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-5 gap-y-7">
                 {g.items.map((item, i) => (
                   <div key={item.id} className="casc flex" style={{ animationDelay: `${Math.min(i, 8) * 60}ms` }}>
-                    <Tarjeta item={item} carrito={carrito} abrir={() => setDetalle(item)} />
+                    <Tarjeta item={item} carrito={carrito} abrir={() => setDetalle(item)} variante={i} />
                   </div>
                 ))}
               </div>
@@ -882,12 +882,12 @@ function Banners({ banners, nombre, bienvenida, sinBienvenida, grande, onEnlace 
   const ancho = banners.every((b) => b.imagen_escritorio_url);
 
   return (
-    <div className={`mt-4 ${ancho ? "md:mt-0 md:max-w-none" : grande ? "md:max-w-[460px]" : "md:max-w-2xl"} md:mx-auto`}>
+    <div className={`${grande ? "bn-caja " : ""}mt-4 ${ancho ? "md:mt-0 md:max-w-none" : grande ? "md:max-w-[460px]" : "md:max-w-2xl"} md:mx-auto`}>
       <div
         ref={contenedor}
         onScroll={(e) => setActual(Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth))}
         onTouchStart={() => (pausaHasta.current = Date.now() + 6000)}
-        className={`flex overflow-x-auto snap-x snap-mandatory sin-barra rounded-2xl ${ancho && grande ? "md:rounded-none" : ""} ${grande ? "encoge" : ""}`}
+        className={`${grande ? "bn-pista " : ""}flex overflow-x-auto snap-x snap-mandatory sin-barra rounded-2xl ${ancho && grande ? "md:rounded-none" : ""} ${grande ? "encoge" : ""}`}
       >
         {banners.map((b, idx) => {
           const img = (
@@ -908,7 +908,7 @@ function Banners({ banners, nombre, bienvenida, sinBienvenida, grande, onEnlace 
             img
           );
           return (
-            <div key={b.id} className={`snap-center shrink-0 w-full bg-[var(--fondo-suave)] ${grande ? "aspect-[4/5]" : "aspect-[3/2]"} ${ancho ? "md:aspect-[12/5]" : ""}`}>
+            <div key={b.id} className={`${grande ? "bn-slide " : ""}snap-center shrink-0 w-full bg-[var(--fondo-suave)] ${grande ? "aspect-[4/5]" : "aspect-[3/2]"} ${ancho ? "md:aspect-[12/5]" : ""}`}>
               {b.enlace ? (
                 <a
                   href={normalizarEnlace(b.enlace)}
@@ -1035,7 +1035,7 @@ function CarruselFavoritos({ items, carrito, abrir }) {
               willChange: "transform, opacity",
             }}
           >
-            <Tarjeta item={item} carrito={carrito} abrir={() => (centro ? abrir(item) : (frenar(), setIndice(i)))} />
+            <Tarjeta item={item} carrito={carrito} abrir={() => (centro ? abrir(item) : (frenar(), setIndice(i)))} variante={i} />
           </div>
         );
       })}
@@ -1051,7 +1051,7 @@ function ahorroDeCombo(row) {
   return { separado, ahorro: ahorro > 0 ? ahorro : 0 };
 }
 
-function Tarjeta({ item, carrito, abrir }) {
+function Tarjeta({ item, carrito, abrir, variante = 0 }) {
   const combo = ahorroDeCombo(item);
   const tieneTramos = (item.tramos || []).length > 0;
   const opciones = item.tipo === "variantes" ? item.variantes : [item];
@@ -1071,6 +1071,7 @@ function Tarjeta({ item, carrito, abrir }) {
     <button
       onClick={item.hayStock ? abrir : undefined}
       disabled={!item.hayStock}
+      data-v={variante % 3}
       className={`tarjeta-prod text-left bg-transparent flex flex-col gap-1 w-full active:scale-[0.97] transition-transform ${item.hayStock ? "" : "opacity-60"}`}
     >
       <div className="aspect-square bg-transparent relative p-0.5">
@@ -1096,18 +1097,18 @@ function Tarjeta({ item, carrito, abrir }) {
           <span className="absolute top-2 right-2 w-6 h-6 rounded-full bg-[var(--acento)] text-[var(--sobre-acento)] text-xs flex items-center justify-center">✓</span>
         )}
       </div>
-      <div className="px-1 flex flex-col gap-1 flex-1 text-[var(--verde)]">
+      <div className="info-tarjeta px-1 flex flex-col gap-1 flex-1 text-[var(--verde)]">
         <div className="min-h-[2.5rem] flex items-end">
           <p className="t-titulo text-[15px] font-extrabold leading-snug line-clamp-2">{item.nombre}</p>
         </div>
         <div className="flex items-center justify-between">
-          <p className="min-w-0 whitespace-nowrap text-[15px] font-extrabold">
+          <p className="precio-tarjeta min-w-0 whitespace-nowrap text-[15px] font-extrabold">
             {precioTexto}
             {combo.ahorro > 0 && <span className="ml-1.5 text-[12px] font-medium line-through opacity-60">{money(combo.separado)}</span>}
             {precioSufijo && <span className="ml-1 text-[12px] font-medium opacity-80">{precioSufijo}</span>}
           </p>
           {item.hayStock && (
-            <span className="w-9 h-9 shrink-0 rounded-full bg-[var(--acento)] text-[var(--sobre-acento)] text-xl font-normal flex items-center justify-center">+</span>
+            <span className="mas-tarjeta w-9 h-9 shrink-0 rounded-full bg-[var(--acento)] text-[var(--sobre-acento)] text-xl font-normal flex items-center justify-center">+</span>
           )}
         </div>
       </div>
