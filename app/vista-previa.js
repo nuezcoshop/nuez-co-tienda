@@ -74,6 +74,8 @@ export default function VistaPrevia() {
       else if (el.closest("button:not(.tarjeta-prod), .btn-tienda, a")) bloque = "botones";
       // Los enlaces de afuera no se abren; los botones (ir a la tienda, abrir un producto, etc.) funcionan para poder recorrer la tienda.
       if (el.closest("a")) e.preventDefault();
+      // Los botones principales (ej: "Ir a la tienda") solo se seleccionan para editarlos, no se ejecutan.
+      if (el.closest(".btn-tienda")) { e.preventDefault(); e.stopPropagation(); }
       window.parent.postMessage({ tipo: "nz-click", bloque }, "*");
     }
     document.addEventListener("click", alTocar, true);

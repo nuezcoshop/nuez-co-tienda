@@ -329,6 +329,20 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
     .sort((a, b) => Number(b.hayStock) - Number(a.hayStock) || a.nombre.localeCompare(b.nombre));
 
   // "Inicio" = sin categoría elegida ni búsqueda. "Todos" muestra el catálogo completo agrupado por categoría.
+  // Editor visual del POS: permite cambiar entre inicio y tienda sin tocar botones.
+  useEffect(() => {
+    let enIframe = false;
+    try { enIframe = window.parent !== window; } catch { enIframe = true; }
+    if (!enIframe || new URLSearchParams(window.location.search).get("preview") !== "1") return;
+    const alRecibir = (e) => {
+      if (e.source === window.parent && e.data && e.data.tipo === "nz-vista" && (e.data.vista === "inicio" || e.data.vista === "tienda")) {
+        setVista(e.data.vista);
+        window.scrollTo({ top: 0 });
+      }
+    };
+    window.addEventListener("message", alRecibir);
+    return () => window.removeEventListener("message", alRecibir);
+  }, []);
   const esInicio = vista === "inicio";
   const bannersPrincipal = (banners || []).filter((b) => (b.zona || "principal") === "principal");
   const bannersInicio = (banners || []).filter((b) => b.zona === "inicio");
