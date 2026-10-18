@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { coloresDesde, esHex } from "@/lib/colores";
+import VistaPrevia from "./vista-previa";
 import { tipografiaDesde, hrefFuentes } from "@/lib/tipografia";
 import { limpiarEscalones } from "./escalones";
 import Tienda from "./tienda";
@@ -104,6 +105,7 @@ export default async function Page() {
   return (
     <div className="nz-tema" style={{ ...colores, ...tipo.vars, color: "var(--tinta)" }}>
       {estilosTipo}
+      <VistaPrevia />
       <Visitas />
       {popupVigente && (
         <Popup titulo={String(c.popup_titulo).trim()} boton={String(c.popup_boton || "").trim()} link={enlacePopup(c.popup_link)} letraChica={String(c.popup_letra_chica || "").trim()} />

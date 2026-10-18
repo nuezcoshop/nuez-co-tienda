@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 export default function Visitas() {
   useEffect(() => {
     try {
+      if (new URLSearchParams(window.location.search).get("preview") === "1") return; // vista previa del editor del POS
       if (navigator.webdriver || /bot|crawler|spider|headless|preview/i.test(navigator.userAgent)) return;
       if (sessionStorage.getItem("nuez_visita")) return;
       sessionStorage.setItem("nuez_visita", "1");
