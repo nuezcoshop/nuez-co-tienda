@@ -1057,7 +1057,7 @@ function Tarjeta({ item, carrito, abrir, variante = 0 }) {
   const opciones = item.tipo === "variantes" ? item.variantes : [item];
   const enCarrito = opciones.some((o) => carrito[o.id] > 0);
   const etiqueta = item.etiqueta || (opciones.find((o) => o.etiqueta) || {}).etiqueta;
-  const abajo = etiqueta ? "top-10" : "top-2";
+  const abajo = etiqueta || item.pct_online > 0 ? "top-10" : "top-2";
 
   let precioTexto = "";
   let precioSufijo = "";
@@ -1066,6 +1066,7 @@ function Tarjeta({ item, carrito, abrir, variante = 0 }) {
     precioTexto = money(item.precio_venta / 10);
     precioSufijo = "/ 100 g";
   } else precioTexto = money(item.precio_venta);
+  const listaTarjeta = item.precio_lista && item.tipo !== "variantes" ? (item.tipo === "peso" ? money(item.precio_lista / 10) : money(item.precio_lista)) : "";
 
   return (
     <button
@@ -1082,6 +1083,9 @@ function Tarjeta({ item, carrito, abrir, variante = 0 }) {
         )}
         {etiqueta && (
           <span className="absolute top-2 left-2 text-xs font-extrabold bg-[var(--verde)] text-[var(--fondo)] px-3 py-1 rounded-full">{etiqueta}</span>
+        )}
+        {!etiqueta && item.pct_online > 0 && item.hayStock && (
+          <span className="absolute top-2 left-2 text-xs font-extrabold bg-[var(--verde)] text-[var(--fondo)] px-3 py-1 rounded-full">{item.pct_online}% OFF</span>
         )}
         {!item.hayStock && <span className={`absolute ${abajo} left-2 text-[11px] font-semibold bg-[var(--tinta)] text-white px-2 py-1 rounded-full`}>Agotado</span>}
         {item.hayStock && promoNxM(item) && (
@@ -1104,6 +1108,7 @@ function Tarjeta({ item, carrito, abrir, variante = 0 }) {
         <div className="flex items-center justify-between">
           <p className="precio-tarjeta min-w-0 whitespace-nowrap text-[15px] font-extrabold">
             {precioTexto}
+            {listaTarjeta && <span className="ml-1.5 text-[12px] font-medium line-through opacity-60">{listaTarjeta}</span>}
             {combo.ahorro > 0 && <span className="ml-1.5 text-[12px] font-medium line-through opacity-60">{money(combo.separado)}</span>}
             {precioSufijo && <span className="ml-1 text-[12px] font-medium opacity-80">{precioSufijo}</span>}
           </p>
@@ -1274,7 +1279,15 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
           <p className="text-2xl font-extrabold text-[var(--verde)] mt-4">
             {mostrar(precio)}
             <span className="text-sm font-semibold text-[var(--tinta-suave)]">{unidadPrecio}</span>
+            {opcion.precio_lista > 0 && Math.abs(precio - opcion.precio_venta) < 1e-6 && (
+              <span className="ml-2 text-base font-medium line-through opacity-60">{mostrar(precio * (opcion.precio_lista / opcion.precio_venta))}</span>
+            )}
           </p>
+          {opcion.precio_lista > 0 && (
+            <p className="text-sm font-bold text-[var(--verde)] mt-1">
+              ✓ Precio online: {opcion.pct_online}% menos que en el local ({money(opcion.precio_lista)}{esPeso ? " /kg" : ""})
+            </p>
+          )}
           {promo && (
             <p className="text-sm font-bold text-[var(--verde)] mt-1">
               Promo {promo.texto}: llevando {promo.lleva} pagás {promo.paga}
