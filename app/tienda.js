@@ -433,7 +433,6 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
   if (mensajesCinta.length === 0 && config.direccion) mensajesCinta.push(`Retiro en sucursal: ${config.direccion}`);
   // Velocidad elegida en el POS (1 lenta ... 10 rápida). El 4 es la velocidad de siempre.
   const multiplicadorCinta = [0.4, 0.6, 0.8, 1, 1.3, 1.6, 2, 2.5, 3, 4][Math.min(10, Math.max(1, config.cintaVelocidad || 4)) - 1];
-  const repeticionesCinta = Math.max(4, Math.ceil(8 / Math.max(mensajesCinta.length, 1)));
 
   let grupos;
   if (categoria && categoria !== TODOS) {
@@ -542,21 +541,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
     <div className="min-h-screen pb-28 bg-[var(--fondo)]">
       {mensajesCinta.length > 0 && (
         <div className="bg-[var(--verde)] text-white text-xs font-medium py-2 overflow-hidden whitespace-nowrap">
-          {/* Cada grupo repite los mensajes las veces necesarias para cubrir hasta una pantalla muy ancha; la velocidad se mantiene igual. */}
-          <div className="cinta-pista" style={{ animationDuration: `${(repeticionesCinta * mensajesCinta.length * 10) / multiplicadorCinta}s` }}>
-            {[0, 1].map((k) => (
-              <div key={k} className="cinta-grupo" aria-hidden={k === 1 ? "true" : undefined}>
-                {Array.from({ length: repeticionesCinta }).flatMap((_, r) =>
-                  mensajesCinta.map((m, n) => (
-                    <span key={r + "-" + n}>
-                      {m}
-                      <span className="mx-6 opacity-60">•</span>
-                    </span>
-                  ))
-                )}
-              </div>
-            ))}
-          </div>
+          <CintaMensajes mensajes={mensajesCinta} pausaMs={Math.round(Math.min(7000, Math.max(1800, 3600 / multiplicadorCinta)))} />
         </div>
       )}
 
@@ -1118,6 +1103,42 @@ function Tarjeta({ item, carrito, abrir, variante = 0 }) {
         </div>
       </div>
     </button>
+  );
+}
+
+// Cinta superior: los mensajes se deslizan de a uno (arrancan despacio, aceleran y frenan suave al llegar al centro).
+function CintaMensajes({ mensajes, pausaMs }) {
+  const n = mensajes.length;
+  const [pos, setPos] = useState(0);
+  const [anima, setAnima] = useState(true);
+  useEffect(() => {
+    if (n < 2) return;
+    const t = setInterval(() => {
+      if (document.visibilityState !== "visible") return;
+      setAnima(true);
+      setPos((p) => p + 1);
+    }, pausaMs + 1000);
+    return () => clearInterval(t);
+  }, [n, pausaMs]);
+  // Al llegar al duplicado del primero, vuelve al verdadero sin que se note.
+  function alTerminar() {
+    if (pos >= n) {
+      setAnima(false);
+      setPos(0);
+    }
+  }
+  if (n === 0) return null;
+  const lista = n > 1 ? [...mensajes, mensajes[0]] : mensajes;
+  return (
+    <div
+      className="cinta-desliza"
+      style={{ transform: `translateX(-${pos * 100}%)`, transition: anima ? "transform 1000ms cubic-bezier(0.7, 0, 0.15, 1)" : "none" }}
+      onTransitionEnd={alTerminar}
+    >
+      {lista.map((m, i) => (
+        <div key={i} className="cinta-msg">{m}</div>
+      ))}
+    </div>
   );
 }
 

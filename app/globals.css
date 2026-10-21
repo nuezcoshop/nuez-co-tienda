@@ -58,6 +58,9 @@ body {
 @keyframes cinta { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 .cinta-pista { display: flex; width: max-content; animation: cinta 40s linear infinite; }
 .cinta-grupo { display: flex; flex-shrink: 0; }
+.cinta-desliza { display: flex; width: 100%; }
+.cinta-msg { flex: 0 0 100%; text-align: center; padding: 0 16px; overflow: hidden; text-overflow: ellipsis; }
+@media (prefers-reduced-motion: reduce) { .cinta-desliza { transition: none !important; } }
 /* Menú y ventanas */
 @keyframes fundir { from { opacity: 0; } to { opacity: 1; } }
 @keyframes deslizar-izq { from { transform: translateX(-100%); } to { transform: none; } }
