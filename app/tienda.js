@@ -1656,45 +1656,22 @@ function Pedido({ bolsa, lineas, total, config, agregar, quitar, vaciar, refresc
           </button>
         </div>
 
-        {(config.escalones || []).length > 0 && lineas.length > 0 && (
+        {(config.escalones || []).length > 0 && lineas.length > 0 && (esc.envioGratis || sig || esc.descTier) && (
           <div className="px-5 pt-4">
             {esc.envioGratis ? (
-              <>
-                <p className="text-xs font-semibold mb-1 text-[var(--verde)]">¡Tenés envío gratis a domicilio!</p>
-                {esc.descuentoSiRetira > 0 && (
-                  <p className="text-xs mb-1.5 text-[var(--tinta-suave)]">
-                    Si preferís retirar en el local: {textoBeneficio(esc.descTier, money)} en lugar del envío gratis.
-                  </p>
-                )}
-              </>
-            ) : sig && sig.tipo === "envio_gratis" && esc.descTier ? (
-              <>
-                <p className="text-xs font-semibold mb-1 text-[var(--verde)]">¡Ya tenés un {textoBeneficio(esc.descTier, money).replace(" de descuento", "")} OFF!</p>
-                <p className="text-xs font-semibold mb-0.5 text-[var(--tinta-suave)]">Sumá {money(faltaParaSig)} más y elegí:</p>
-                <p className="text-xs mb-0.5 text-[var(--tinta-suave)]">🚚 Envío gratis a domicilio</p>
-                <p className="text-xs mb-0.5 text-[var(--tinta-suave)]">🛍️ {textoBeneficio(esc.descTier, money).replace(" de descuento", "")} OFF retirando en el local</p>
-                <p className="text-xs italic mb-1.5 text-[var(--tinta-suave)]">Dos beneficios, vos elegís.</p>
-              </>
+              <p className="text-xs font-semibold mb-1 text-[var(--verde)]">¡Tenés envío gratis!</p>
+            ) : sig ? (
+              <p className="text-xs font-semibold mb-1.5 text-[var(--tinta-suave)]">
+                Agregá {money(faltaParaSig)} más y aprovechá {sig.tipo === "envio_gratis" ? "el envío gratis" : `${textoBeneficio(sig, money)}`}
+              </p>
             ) : (
-              <>
-                {esc.descTier && (
-                  <p className="text-xs font-semibold mb-1 text-[var(--verde)]">¡Ya tenés {textoBeneficio(esc.descTier, money)}!</p>
-                )}
-                {sig && (
-                  <p className="text-xs font-semibold mb-1.5 text-[var(--tinta-suave)]">
-                    Sumá {money(faltaParaSig)} más para {sig.tipo === "envio_gratis" ? "envío gratis a domicilio" : textoBeneficio(sig, money)}
-                  </p>
-                )}
-                {!sig && entrega !== "envio" && esc.envioTier && (
-                  <p className="text-xs mb-1.5 text-[var(--tinta-suave)]">
-                    Elegí envío a domicilio y es gratis (en lugar del descuento).
-                  </p>
-                )}
-              </>
+              <p className="text-xs font-semibold mb-1 text-[var(--verde)]">¡Tenés {textoBeneficio(esc.descTier, money)}!</p>
             )}
-            <div className="h-2 rounded-full bg-[var(--fondo-suave)] overflow-hidden">
-              <div className="h-full bg-[var(--acento)] rounded-full transition-all" style={{ width: `${progreso * 100}%` }} />
-            </div>
+            {sig && !esc.envioGratis && (
+              <div className="h-2 rounded-full bg-[var(--fondo-suave)] overflow-hidden">
+                <div className="h-full bg-[var(--acento)] rounded-full transition-all" style={{ width: `${progreso * 100}%` }} />
+              </div>
+            )}
           </div>
         )}
 
