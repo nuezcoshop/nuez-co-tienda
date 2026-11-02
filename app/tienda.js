@@ -660,6 +660,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
             {config.horario && <p>{config.horario}</p>}
           </footer>
         )}
+        <NewsletterCaja />
         <div className="logo-final mt-12 mb-8 flex flex-col items-center text-center">
           {config.logo ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -1116,6 +1117,7 @@ function Tarjeta({ item, carrito, abrir, variante = 0 }) {
 function AvisoStock({ item, cerrar }) {
   const [email, setEmail] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
+  const [novedades, setNovedades] = useState(false);
   const [estado, setEstado] = useState("form"); // form | enviando | ok | error
   const [msg, setMsg] = useState("");
   const [montado, setMontado] = useState(false);
@@ -1139,6 +1141,11 @@ function AvisoStock({ item, cerrar }) {
       return;
     }
     if (data === "ok") {
+      if (novedades) {
+        try {
+          await supabase.rpc("suscribir_newsletter", { p_email: email, p_whatsapp: whatsapp || null, p_origen: "aviso-stock" });
+        } catch {}
+      }
       try {
         localStorage.setItem("aviso_email", email.trim());
       } catch {}
@@ -1189,6 +1196,10 @@ function AvisoStock({ item, cerrar }) {
               onChange={(e) => setWhatsapp(e.target.value)}
               className="w-full h-11 px-4 rounded-full border border-[var(--verde)] border-opacity-30 bg-[var(--fondo)] text-[var(--verde)] placeholder:text-[var(--verde)] placeholder:opacity-50 outline-none"
             />
+            <label className="flex items-start gap-2 text-xs">
+              <input type="checkbox" checked={novedades} onChange={(e) => setNovedades(e.target.checked)} className="mt-0.5" />
+              <span>Quiero recibir novedades y ofertas de Nuez Co</span>
+            </label>
             {msg && <p className="text-sm text-red-600">{msg}</p>}
             <button type="submit" disabled={estado === "enviando"} className="w-full h-11 rounded-full bg-[var(--acento)] text-[var(--sobre-acento)] font-bold disabled:opacity-60">
               {estado === "enviando" ? "Guardando..." : "Avisarme"}
@@ -2049,5 +2060,60 @@ function Opcion({ activo, onClick, children }) {
     >
       {children}
     </button>
+  );
+}
+
+
+// Suscripción al newsletter (se guarda en la base; los envíos salen desde el sistema).
+function NewsletterCaja() {
+  const [email, setEmail] = useState("");
+  const [estado, setEstado] = useState("form"); // form | enviando | ok
+  const [msg, setMsg] = useState("");
+
+  async function enviar(e) {
+    e.preventDefault();
+    setEstado("enviando");
+    setMsg("");
+    const { data, error } = await supabase.rpc("suscribir_newsletter", { p_email: email, p_whatsapp: null, p_origen: "tienda" });
+    if (error || !data) {
+      setEstado("form");
+      setMsg("No pudimos guardar tu mail. Probá de nuevo en un rato.");
+      return;
+    }
+    if (data === "ok") {
+      setEstado("ok");
+      return;
+    }
+    setEstado("form");
+    setMsg(data === "email_invalido" ? "Revisá el mail, parece que le falta algo." : "No pudimos guardar tu mail.");
+  }
+
+  return (
+    <section className="mt-12 rounded-3xl bg-[var(--fondo-suave)] p-6 text-center text-[var(--verde)]">
+      {estado === "ok" ? (
+        <p className="font-extrabold text-lg">¡Gracias! Ya sos parte de Nuez Co 🌰</p>
+      ) : (
+        <>
+          <p className="font-extrabold text-lg leading-snug">Recibí novedades y ofertas</p>
+          <p className="text-sm mt-1 opacity-80">Dejanos tu mail y te avisamos de lo nuevo. Sin spam.</p>
+          <form onSubmit={enviar} className="mt-4 flex flex-col sm:flex-row gap-2 max-w-md mx-auto">
+            <input
+              type="email"
+              required
+              inputMode="email"
+              autoComplete="email"
+              placeholder="Tu mail"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="flex-1 h-11 px-4 rounded-full border border-[var(--verde)] border-opacity-30 bg-[var(--fondo)] text-[var(--verde)] placeholder:text-[var(--verde)] placeholder:opacity-50 outline-none"
+            />
+            <button type="submit" disabled={estado === "enviando"} className="h-11 px-6 rounded-full bg-[var(--acento)] text-[var(--sobre-acento)] font-bold disabled:opacity-60">
+              {estado === "enviando" ? "..." : "Suscribirme"}
+            </button>
+          </form>
+          {msg && <p className="text-sm text-red-600 mt-2">{msg}</p>}
+        </>
+      )}
+    </section>
   );
 }
