@@ -4,6 +4,7 @@ import Escalera from "./escalera";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { estadoEscalones, textoBeneficio } from "./escalones";
 import dynamic from "next/dynamic";
+import { createPortal } from "react-dom";
 import { costoEnvio, enlaceMapa } from "@/lib/envio";
 import { supabase } from "@/lib/supabase";
 import { ahorroPorCantidad, armarCatalogo, disponible, formatoCantidad, money, normalizarTexto, precioPorCantidad, promoNxM, sugerenciaTramo, totalPorCantidad } from "@/lib/catalogo";
@@ -1037,6 +1038,7 @@ function ahorroDeCombo(row) {
 }
 
 function Tarjeta({ item, carrito, abrir, variante = 0 }) {
+  const [avisoAbierto, setAvisoAbierto] = useState(false);
   const combo = ahorroDeCombo(item);
   const tieneTramos = (item.tramos || []).length > 0;
   const opciones = item.tipo === "variantes" ? item.variantes : [item];
@@ -1054,9 +1056,9 @@ function Tarjeta({ item, carrito, abrir, variante = 0 }) {
   const listaTarjeta = item.precio_lista && item.tipo !== "variantes" ? (item.tipo === "peso" ? money(item.precio_lista / 10) : money(item.precio_lista)) : "";
 
   return (
+    <>
     <button
-      onClick={item.hayStock ? abrir : undefined}
-      disabled={!item.hayStock}
+      onClick={item.hayStock ? abrir : () => setAvisoAbierto(true)}
       data-v={variante % 3}
       className={`tarjeta-prod text-left bg-transparent flex flex-col gap-1 w-full active:scale-[0.97] transition-transform ${item.hayStock ? "" : "opacity-60"}`}
     >
@@ -1097,12 +1099,105 @@ function Tarjeta({ item, carrito, abrir, variante = 0 }) {
             {combo.ahorro > 0 && <span className="ml-1.5 text-[12px] font-medium line-through opacity-60">{money(combo.separado)}</span>}
             {precioSufijo && <span className="ml-1 text-[12px] font-medium opacity-80">{precioSufijo}</span>}
           </p>
-          {item.hayStock && (
+          {item.hayStock ? (
             <span className="mas-tarjeta w-9 h-9 shrink-0 rounded-full bg-[var(--acento)] text-[var(--sobre-acento)] text-xl font-normal flex items-center justify-center">+</span>
+          ) : (
+            <span className="shrink-0 rounded-full bg-[var(--acento)] text-[var(--sobre-acento)] text-[12px] font-bold px-3 py-1.5">🔔 Avisarme</span>
           )}
         </div>
       </div>
     </button>
+    {avisoAbierto && <AvisoStock item={item} cerrar={() => setAvisoAbierto(false)} />}
+    </>
+  );
+}
+
+// Pedido de aviso cuando un producto agotado vuelve a tener stock (el mail sale solo, desde la base de datos).
+function AvisoStock({ item, cerrar }) {
+  const [email, setEmail] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
+  const [estado, setEstado] = useState("form"); // form | enviando | ok | error
+  const [msg, setMsg] = useState("");
+  const [montado, setMontado] = useState(false);
+
+  useEffect(() => {
+    setMontado(true);
+    try {
+      const g = localStorage.getItem("aviso_email");
+      if (g) setEmail(g);
+    } catch {}
+  }, []);
+
+  async function enviar(e) {
+    e.preventDefault();
+    setEstado("enviando");
+    setMsg("");
+    const { data, error } = await supabase.rpc("pedir_aviso_stock", { p_producto: item.id, p_email: email, p_whatsapp: whatsapp || null });
+    if (error || !data) {
+      setEstado("form");
+      setMsg("No pudimos guardar tu pedido. Probá de nuevo en un rato.");
+      return;
+    }
+    if (data === "ok") {
+      try {
+        localStorage.setItem("aviso_email", email.trim());
+      } catch {}
+      setEstado("ok");
+      return;
+    }
+    setEstado("form");
+    setMsg(
+      data === "email_invalido" ? "Revisá el mail, parece que le falta algo." :
+      data === "whatsapp_invalido" ? "Revisá el número de WhatsApp." :
+      data === "limite" ? "Llegaste al máximo de avisos por ahora." :
+      "No pudimos guardar tu pedido."
+    );
+  }
+
+  if (!montado) return null;
+  return createPortal(
+    <div className="fixed inset-0 z-[70] bg-black/50 flex items-end sm:items-center justify-center" onClick={cerrar}>
+      <div className="w-full sm:max-w-sm bg-[var(--fondo)] rounded-t-3xl sm:rounded-3xl p-5 text-[var(--verde)]" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-start justify-between gap-3 mb-1">
+          <p className="font-extrabold text-lg leading-snug">{estado === "ok" ? "¡Listo!" : "Avisame cuando vuelva"}</p>
+          <button onClick={cerrar} aria-label="Cerrar" className="text-xl leading-none px-1">✕</button>
+        </div>
+        {estado === "ok" ? (
+          <>
+            <p className="text-sm mb-4">Te mandamos un mail apenas haya stock de <b>{item.nombre}</b>.</p>
+            <button onClick={cerrar} className="w-full h-11 rounded-full bg-[var(--acento)] text-[var(--sobre-acento)] font-bold">Seguir mirando</button>
+          </>
+        ) : (
+          <form onSubmit={enviar} className="space-y-3">
+            <p className="text-sm">{item.nombre}</p>
+            <input
+              type="email"
+              required
+              inputMode="email"
+              autoComplete="email"
+              placeholder="Tu mail"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full h-11 px-4 rounded-full border border-[var(--verde)]/30 bg-white/70 outline-none"
+            />
+            <input
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              placeholder="WhatsApp (opcional)"
+              value={whatsapp}
+              onChange={(e) => setWhatsapp(e.target.value)}
+              className="w-full h-11 px-4 rounded-full border border-[var(--verde)]/30 bg-white/70 outline-none"
+            />
+            {msg && <p className="text-sm text-red-600">{msg}</p>}
+            <button type="submit" disabled={estado === "enviando"} className="w-full h-11 rounded-full bg-[var(--acento)] text-[var(--sobre-acento)] font-bold disabled:opacity-60">
+              {estado === "enviando" ? "Guardando..." : "Avisarme"}
+            </button>
+          </form>
+        )}
+      </div>
+    </div>,
+    document.body
   );
 }
 
