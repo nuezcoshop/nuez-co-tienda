@@ -345,6 +345,21 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
     return () => window.removeEventListener("message", alRecibir);
   }, []);
   const esInicio = vista === "inicio";
+  // Botón de WhatsApp: aparece al bajar en el inicio y se esconde al subir.
+  const [verWsp, setVerWsp] = useState(false);
+  useEffect(() => {
+    if (!esInicio) { setVerWsp(false); return; }
+    let ultimo = window.scrollY;
+    const alScroll = () => {
+      const y = window.scrollY;
+      if (y < 300) setVerWsp(false);
+      else if (y > ultimo + 4) setVerWsp(true);
+      else if (y < ultimo - 4) setVerWsp(false);
+      ultimo = y;
+    };
+    window.addEventListener("scroll", alScroll, { passive: true });
+    return () => window.removeEventListener("scroll", alScroll);
+  }, [esInicio]);
   const bannersPrincipal = (banners || []).filter((b) => (b.zona || "principal") === "principal");
   const bannersInicio = (banners || []).filter((b) => b.zona === "inicio");
   const productosDestacados = useMemo(() => {
@@ -686,13 +701,14 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
         </div>
       )}
 
-      {enlaceContacto && !carritoAbierto && !detalle && (
+      {enlaceContacto && esInicio && !carritoAbierto && !detalle && (
         <a
           href={enlaceContacto}
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Escribinos por WhatsApp"
-          className={`fixed right-4 z-30 h-14 w-14 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-lg active:scale-90 transition-all ${cantidadLineas > 0 ? "bottom-24" : "bottom-5"}`}
+          className={`fixed right-4 z-30 h-14 w-14 rounded-full bg-[var(--verde)] text-white flex items-center justify-center shadow-lg active:scale-90 transition-all duration-300 ${cantidadLineas > 0 ? "bottom-24" : "bottom-5"} ${verWsp ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6 pointer-events-none"}`}
+          tabIndex={verWsp ? 0 : -1}
         >
           <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21" />
