@@ -707,7 +707,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Escribinos por WhatsApp"
-          className={`fixed right-4 z-30 h-14 w-14 rounded-full bg-[var(--verde)] text-white flex items-center justify-center shadow-lg active:scale-90 transition-all duration-300 ${cantidadLineas > 0 ? "bottom-24" : "bottom-5"} ${verWsp ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6 pointer-events-none"}`}
+          className={`fixed right-4 z-30 h-14 w-14 rounded-full bg-[var(--verde)] text-white flex items-center justify-center shadow-lg active:scale-90 transition-all duration-300 ${cantidadLineas > 0 ? "bottom-36" : "bottom-16"} ${verWsp ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6 pointer-events-none"}`}
           tabIndex={verWsp ? 0 : -1}
         >
           <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
