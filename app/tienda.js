@@ -1178,7 +1178,7 @@ function AvisoStock({ item, cerrar }) {
               placeholder="Tu mail"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full h-11 px-4 rounded-full border border-[var(--verde)]/30 bg-white/70 outline-none"
+              className="w-full h-11 px-4 rounded-full border border-[var(--verde)] border-opacity-30 bg-[var(--fondo)] text-[var(--verde)] placeholder:text-[var(--verde)] placeholder:opacity-50 outline-none"
             />
             <input
               type="tel"
@@ -1187,7 +1187,7 @@ function AvisoStock({ item, cerrar }) {
               placeholder="WhatsApp (opcional)"
               value={whatsapp}
               onChange={(e) => setWhatsapp(e.target.value)}
-              className="w-full h-11 px-4 rounded-full border border-[var(--verde)]/30 bg-white/70 outline-none"
+              className="w-full h-11 px-4 rounded-full border border-[var(--verde)] border-opacity-30 bg-[var(--fondo)] text-[var(--verde)] placeholder:text-[var(--verde)] placeholder:opacity-50 outline-none"
             />
             {msg && <p className="text-sm text-red-600">{msg}</p>}
             <button type="submit" disabled={estado === "enviando"} className="w-full h-11 rounded-full bg-[var(--acento)] text-[var(--sobre-acento)] font-bold disabled:opacity-60">
@@ -1197,7 +1197,7 @@ function AvisoStock({ item, cerrar }) {
         )}
       </div>
     </div>,
-    document.body
+    document.querySelector(".nz-tema") || document.body
   );
 }
 
