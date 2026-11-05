@@ -52,8 +52,8 @@ export default function VistaPago({ obtener, fijo }) {
     const web = "https://www.mercadopago.com.ar/";
     const ua = navigator.userAgent || "";
     if (/Android/i.test(ua)) {
-      // Abre la app directamente; si no está instalada, cae a la web.
-      window.location.href = `intent://#Intent;scheme=mercadopago;package=com.mercadopago.wallet;S.browser_fallback_url=${encodeURIComponent(web)};end`;
+      // Abre la app instalada por su nombre de paquete (como tocar su ícono); si no está instalada, cae a la web.
+      window.location.href = `intent:#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=com.mercadopago.wallet;S.browser_fallback_url=${encodeURIComponent(web)};end`;
     } else if (/iPhone|iPad|iPod/i.test(ua)) {
       // iPhone: esquema de la app; si en un instante la página sigue visible (no está la app), abre la web.
       const t = setTimeout(() => { if (document.visibilityState === "visible") window.location.href = web; }, 1500);
