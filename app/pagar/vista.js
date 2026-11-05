@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { coloresDesde } from "@/lib/colores";
 
@@ -12,6 +12,8 @@ export default function VistaPago({ obtener, fijo }) {
   const [cobro, setCobro] = useState(undefined); // undefined = cargando
   const [tema, setTema] = useState(null);
   const [copiado, setCopiado] = useState(false);
+  const [autoCopiado, setAutoCopiado] = useState(false); // el alias ya quedó en el portapapeles
+  const aliasCopiadoDe = useRef("");
 
   async function cargar() {
     try {
@@ -45,6 +47,39 @@ export default function VistaPago({ obtener, fijo }) {
       setCopiado(false);
     }
   }
+
+  // Apenas hay un cobro pendiente, se intenta copiar el alias solo. Si el navegador lo bloquea (pide un toque),
+  // se copia con el primer toque en cualquier parte de la pantalla.
+  const aliasActivo = cobro && cobro.estado === "pendiente" ? cobro.alias : "";
+  useEffect(() => {
+    if (!aliasActivo) {
+      setAutoCopiado(false);
+      return undefined;
+    }
+    if (aliasCopiadoDe.current === aliasActivo) return undefined;
+    let activo = true;
+    const copiar = async () => {
+      try {
+        await navigator.clipboard.writeText(String(aliasActivo));
+        if (!activo) return true;
+        aliasCopiadoDe.current = aliasActivo;
+        setAutoCopiado(true);
+        return true;
+      } catch (e) {
+        return false;
+      }
+    };
+    const alToque = async () => {
+      if (await copiar()) document.removeEventListener("pointerdown", alToque);
+    };
+    copiar().then((ok) => {
+      if (!ok && activo) document.addEventListener("pointerdown", alToque);
+    });
+    return () => {
+      activo = false;
+      document.removeEventListener("pointerdown", alToque);
+    };
+  }, [aliasActivo]);
 
   const WEB_MP = "https://www.mercadopago.com.ar/";
   // Android: enlace "intent" hacia la app (esquema propio de Mercado Pago). Si no se puede abrir, cae a la web.
@@ -108,7 +143,21 @@ export default function VistaPago({ obtener, fijo }) {
 
         {cobro && estado === "pendiente" && (
           <>
-            <div className="bg-white rounded-2xl border border-[var(--borde)] p-6 text-center mt-4">
+            <div className={`rounded-2xl p-4 text-center mt-4 font-bold ${autoCopiado ? "bg-[var(--verde)] text-white" : "bg-[var(--acento)] text-[var(--sobre-acento)]"}`}>
+              {autoCopiado ? (
+                <>
+                  <p className="text-xl">✓ ALIAS COPIADO</p>
+                  <p className="text-sm font-semibold mt-0.5">Andá a pagar: abrí tu app, Transferir y pegalo</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-lg">Tocá la pantalla para copiar el alias</p>
+                  <p className="text-sm font-semibold mt-0.5">y después pegalo en tu app para transferir</p>
+                </>
+              )}
+            </div>
+
+            <div className="bg-white rounded-2xl border border-[var(--borde)] p-6 text-center mt-3">
               <p className="text-sm text-[var(--tinta-suave)]">Total a pagar</p>
               <p className="text-5xl font-extrabold mt-1">{money(cobro.monto)}</p>
               <p className="text-sm text-[var(--tinta-suave)] mt-3">
@@ -131,10 +180,10 @@ export default function VistaPago({ obtener, fijo }) {
                 Pagar con Mercado Pago
               </button>
             )}
-            <p className="text-xs text-center text-[var(--tinta-suave)] mt-1.5">Copiamos el alias por vos y abrimos la app: pegalo y escribí el monto.</p>
+            <p className="text-xs text-center text-[var(--tinta-suave)] mt-1.5">Si usás Mercado Pago, este botón abre la app con el alias copiado.</p>
 
             <button onClick={copiarAlias} className="mt-4 w-full h-12 rounded-2xl border border-[var(--borde)] bg-white text-sm font-semibold">
-              {copiado ? "¡Alias copiado!" : "Otro banco o billetera: copiar alias"}
+              {copiado ? "¡Alias copiado!" : "Copiar alias de nuevo"}
             </button>
             <p className="text-center text-xs text-[var(--tinta-suave)] mt-4">Esta página se actualiza sola cuando recibimos el pago.</p>
           </>
