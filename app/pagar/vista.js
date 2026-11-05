@@ -46,21 +46,24 @@ export default function VistaPago({ obtener, fijo }) {
     }
   }
 
-  // Un solo toque: copia el alias y abre Mercado Pago. Después solo queda pegar el alias y escribir el monto.
+  const WEB_MP = "https://www.mercadopago.com.ar/";
+  // Android: enlace "intent" hacia la app (esquema propio de Mercado Pago). Si no se puede abrir, cae a la web.
+  const enlaceAndroid = `intent://home#Intent;scheme=mercadopago;package=com.mercadopago.wallet;S.browser_fallback_url=${encodeURIComponent(WEB_MP)};end`;
+  const [esAndroid, setEsAndroid] = useState(false);
+  useEffect(() => {
+    setEsAndroid(/Android/i.test(navigator.userAgent || ""));
+  }, []);
+
+  // iPhone y computadora: el alias se copia y se abre la app (iPhone) o la web.
   function irMercadoPago() {
     copiarAlias();
-    const web = "https://www.mercadopago.com.ar/";
     const ua = navigator.userAgent || "";
-    if (/Android/i.test(ua)) {
-      // Abre la app instalada por su nombre de paquete (como tocar su ícono); si no está instalada, cae a la web.
-      window.location.href = `intent:#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=com.mercadopago.wallet;S.browser_fallback_url=${encodeURIComponent(web)};end`;
-    } else if (/iPhone|iPad|iPod/i.test(ua)) {
-      // iPhone: esquema de la app; si en un instante la página sigue visible (no está la app), abre la web.
-      const t = setTimeout(() => { if (document.visibilityState === "visible") window.location.href = web; }, 1500);
+    if (/iPhone|iPad|iPod/i.test(ua)) {
+      const t = setTimeout(() => { if (document.visibilityState === "visible") window.location.href = WEB_MP; }, 1500);
       document.addEventListener("visibilitychange", () => clearTimeout(t), { once: true });
       window.location.href = "mercadopago://";
     } else {
-      window.location.href = web;
+      window.location.href = WEB_MP;
     }
   }
 
@@ -114,9 +117,20 @@ export default function VistaPago({ obtener, fijo }) {
               </p>
             </div>
 
-            <button onClick={irMercadoPago} className="mt-4 w-full h-14 rounded-2xl bg-[var(--verde)] text-white text-base font-bold">
-              Pagar con Mercado Pago
-            </button>
+            {esAndroid ? (
+              // En Android es un enlace real: Chrome lo trata como toque del usuario y abre la app.
+              <a
+                href={enlaceAndroid}
+                onClick={copiarAlias}
+                className="mt-4 w-full h-14 rounded-2xl bg-[var(--verde)] text-white text-base font-bold flex items-center justify-center"
+              >
+                Pagar con Mercado Pago
+              </a>
+            ) : (
+              <button onClick={irMercadoPago} className="mt-4 w-full h-14 rounded-2xl bg-[var(--verde)] text-white text-base font-bold">
+                Pagar con Mercado Pago
+              </button>
+            )}
             <p className="text-xs text-center text-[var(--tinta-suave)] mt-1.5">Copiamos el alias por vos y abrimos la app: pegalo y escribí el monto.</p>
 
             <button onClick={copiarAlias} className="mt-4 w-full h-12 rounded-2xl border border-[var(--borde)] bg-white text-sm font-semibold">
