@@ -111,8 +111,15 @@ export default function Seguimiento({ params }) {
               )}
             </div>
 
+            {pedido.modificado && estado !== "cancelado" && (
+              <div className="mt-4 rounded-2xl border border-amber-300 bg-amber-50 text-amber-900 p-4 text-sm">
+                <p className="font-semibold">Modificamos tu pedido</p>
+                <p className="mt-1">Cambiamos algún producto (por ejemplo por falta de stock). Abajo ves cómo quedó tu pedido y el total actualizado. Si algo no te cierra, escribinos por WhatsApp.</p>
+              </div>
+            )}
+
             <div className="bg-white rounded-2xl border border-[var(--borde)] p-5 mt-4">
-              <p className="text-sm font-semibold mb-2">Tu pedido</p>
+              <p className="text-sm font-semibold mb-2">{pedido.modificado ? "Tu pedido (actualizado)" : "Tu pedido"}</p>
               <ul className="text-sm space-y-1">
                 {(pedido.items || []).map((i, k) => (
                   <li key={k} className="flex justify-between gap-3">
