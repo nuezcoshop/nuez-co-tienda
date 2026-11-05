@@ -49,7 +49,19 @@ export default function VistaPago({ obtener, fijo }) {
   // Un solo toque: copia el alias y abre Mercado Pago. Después solo queda pegar el alias y escribir el monto.
   function irMercadoPago() {
     copiarAlias();
-    window.location.href = "https://www.mercadopago.com.ar/";
+    const web = "https://www.mercadopago.com.ar/";
+    const ua = navigator.userAgent || "";
+    if (/Android/i.test(ua)) {
+      // Abre la app directamente; si no está instalada, cae a la web.
+      window.location.href = `intent://#Intent;scheme=mercadopago;package=com.mercadopago.wallet;S.browser_fallback_url=${encodeURIComponent(web)};end`;
+    } else if (/iPhone|iPad|iPod/i.test(ua)) {
+      // iPhone: esquema de la app; si en un instante la página sigue visible (no está la app), abre la web.
+      const t = setTimeout(() => { if (document.visibilityState === "visible") window.location.href = web; }, 1500);
+      document.addEventListener("visibilitychange", () => clearTimeout(t), { once: true });
+      window.location.href = "mercadopago://";
+    } else {
+      window.location.href = web;
+    }
   }
 
   const estado = cobro?.estado;
