@@ -53,7 +53,6 @@ export default function VistaPago({ obtener, fijo }) {
   const aliasActivo = cobro && cobro.estado === "pendiente" ? cobro.alias : "";
   useEffect(() => {
     if (!aliasActivo) {
-      aliasCopiadoDe.current = "";
       setAutoCopiado(false);
       return undefined;
     }
