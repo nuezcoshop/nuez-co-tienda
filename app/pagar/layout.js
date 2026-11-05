@@ -1,4 +1,4 @@
-// La página de pago es privada de cada cobro: no debe aparecer en buscadores.
+// La página de pago no debe aparecer en buscadores.
 export const metadata = {
   title: "Pagar | Nuez Co",
   robots: { index: false, follow: false },
