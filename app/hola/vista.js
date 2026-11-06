@@ -151,6 +151,19 @@ export default function VistaPago({ obtener, fijo }) {
               </p>
             </div>
 
+            {cobro.mp_link && (
+              // Mercado Pago: el enlace abre la app con el monto ya cargado.
+              <>
+                <a href={cobro.mp_link} className="mt-4 w-full h-14 rounded-2xl bg-[var(--verde)] text-white text-base font-bold flex items-center justify-center">
+                  Pagar {money(cobro.monto)} con Mercado Pago
+                </a>
+                <p className="text-xs text-center text-[var(--tinta-suave)] mt-1.5">Se abre Mercado Pago con el monto ya cargado. Elegí cómo pagar y listo.</p>
+                <p className="text-center text-xs font-semibold text-[var(--tinta-suave)] mt-4">También podés transferir al alias:</p>
+              </>
+            )}
+
+            {!cobro.mp_link && (
+              <>
             {esAndroid ? (
               // En Android es un enlace real: Chrome lo trata como toque del usuario y abre la app.
               <a
@@ -167,8 +180,11 @@ export default function VistaPago({ obtener, fijo }) {
             )}
             <p className="text-xs text-center text-[var(--tinta-suave)] mt-1.5">Copiamos el alias por vos y abrimos la app: pegalo y escribí el monto.</p>
 
+              </>
+            )}
+
             <button onClick={copiarAlias} className="mt-4 w-full h-12 rounded-2xl border border-[var(--borde)] bg-white text-sm font-semibold">
-              {copiado ? "¡Alias copiado!" : "Otro banco o billetera: copiar alias"}
+              {copiado ? "¡Alias copiado!" : cobro.mp_link ? "Copiar alias" : "Otro banco o billetera: copiar alias"}
             </button>
             <p className="text-center text-xs text-[var(--tinta-suave)] mt-4">Esta página se actualiza sola cuando recibimos el pago.</p>
           </>
