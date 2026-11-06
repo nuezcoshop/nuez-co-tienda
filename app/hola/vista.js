@@ -17,7 +17,7 @@ export default function VistaPago({ obtener, fijo }) {
   const tokenCobro = useRef(""); // lo recibe la página mientras el cobro está pendiente (para el ticket)
   const [bajandoTicket, setBajandoTicket] = useState(false);
   const [errorTicket, setErrorTicket] = useState("");
-  const [direccion, setDireccion] = useState("");
+  const [infoLocal, setInfoLocal] = useState({});
 
   async function cargar() {
     try {
@@ -115,7 +115,7 @@ export default function VistaPago({ obtener, fijo }) {
                     setBajandoTicket(true);
                     setErrorTicket("");
                     try {
-                      await descargarTicket(tokenCobro.current, direccion);
+                      await descargarTicket(tokenCobro.current, { ...infoLocal, logo_url: tema?.logo });
                     } catch (e) {
                       setErrorTicket(e.message || "No se pudo descargar el ticket.");
                     }
@@ -129,7 +129,7 @@ export default function VistaPago({ obtener, fijo }) {
                 {errorTicket && <p className="text-xs text-center text-red-600 mt-1.5">{errorTicket}</p>}
               </div>
             )}
-            <Multilink saludo={false} alCargar={(l) => setDireccion(l.direccion || "")} />
+            <Multilink saludo={false} alCargar={(l) => setInfoLocal(l || {})} />
           </>
         )}
 
