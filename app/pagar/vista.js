@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { coloresDesde } from "@/lib/colores";
+import Multilink from "./multilink";
 
 const money = (n) => "$" + Math.round(Number(n) || 0).toLocaleString("es-AR");
 
@@ -82,11 +83,13 @@ export default function VistaPago({ obtener, fijo }) {
 
         {cobro === undefined && <p className="text-center text-sm text-[var(--tinta-suave)] mt-6">Cargando…</p>}
 
-        {cobro === null && (
+        {cobro === null && fijo && <Multilink />}
+
+        {cobro === null && !fijo && (
           <div className="bg-white rounded-2xl border border-[var(--borde)] p-6 text-center mt-4">
-            <p className="font-semibold">{fijo ? "Esperando el monto…" : "No encontramos este cobro."}</p>
+            <p className="font-semibold">No encontramos este cobro.</p>
             <p className="text-sm text-[var(--tinta-suave)] mt-2">
-              {fijo ? "En cuanto el cajero cargue tu compra, el monto aparece acá solo." : "Pedile al local que te muestre el código de nuevo."}
+              Pedile al local que te muestre el código de nuevo.
             </p>
           </div>
         )}
