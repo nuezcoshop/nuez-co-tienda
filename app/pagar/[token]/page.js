@@ -1,7 +1,7 @@
 "use client";
 
 import { supabase } from "@/lib/supabase";
-import VistaPago from "../vista";
+import VistaPago from "../../hola/vista";
 
 // Link de un cobro puntual (por código largo).
 export default function Pagar({ params }) {

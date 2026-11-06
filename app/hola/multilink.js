@@ -57,7 +57,7 @@ function Boton({ href, icono, titulo, sub }) {
 }
 
 // Pantalla de "pausa": enlaces del local. Cuando el cajero lanza un cobro, esta pantalla pasa sola a pagar.
-export default function Multilink() {
+export default function Multilink({ saludo = true, alCargar }) {
   const [links, setLinks] = useState(null);
   const [android, setAndroid] = useState(false);
 
@@ -67,6 +67,7 @@ export default function Multilink() {
       try {
         const { data } = await supabase.rpc("multilink_publico");
         setLinks(data || {});
+        if (alCargar) alCargar(data || {});
       } catch (e) {
         setLinks({});
       }
@@ -78,13 +79,16 @@ export default function Multilink() {
   const ig = enlaceInstagram(links.instagram);
   const resena = enlaceResena(links.resena_url);
   const tienda = links.tienda_url || "https://nuezco.com.ar";
+  const numeroWa = String(links.whatsapp || "").replace(/\D/g, "");
+  const wa = numeroWa ? `https://wa.me/${numeroWa}?text=${encodeURIComponent("¡Hola Nuez Co! Los agendo 💛")}` : "";
 
   return (
     <div className="mt-4 space-y-3" data-android={android ? "1" : "0"}>
-      <p className="text-center text-base font-semibold text-[var(--tinta)] mb-2">¡Gracias por visitarnos!</p>
+      {saludo && <p className="text-center text-base font-semibold text-[var(--tinta)] mb-2">¡Gracias por visitarnos!</p>}
       {resena && <Boton href={resena} icono="⭐" titulo="Dejá tu reseña en Google" sub="Nos ayuda muchísimo" />}
       {ig && <Boton href={ig} icono="📸" titulo="Seguinos en Instagram" sub={`@${usuarioInstagram(links.instagram)}`} />}
       <Boton href={tienda} icono="🛒" titulo="Tienda online" sub="Pedí desde tu casa" />
+      {wa && <Boton href={wa} icono="💬" titulo="Agendanos en WhatsApp" sub="Escribinos y enterate de las novedades" />}
     </div>
   );
 }

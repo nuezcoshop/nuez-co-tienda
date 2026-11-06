@@ -1,18 +1,6 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { supabase } from "@/lib/supabase";
-import VistaPago from "./vista";
-
-// QR fijo del mostrador: muestra el cobro que el cajero acaba de cargar en el POS.
-export default function PagarFijo() {
-  return (
-    <VistaPago
-      fijo
-      obtener={async () => {
-        const { data, error } = await supabase.rpc("cobro_activo");
-        if (error) throw error;
-        return data;
-      }}
-    />
-  );
+// El QR y el NFC que ya se imprimieron/grabaron con /pagar siguen funcionando: van a /hola.
+export default function Pagar() {
+  redirect("/hola");
 }

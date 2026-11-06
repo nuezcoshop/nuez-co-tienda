@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { coloresDesde } from "@/lib/colores";
 import Multilink from "./multilink";
+import { descargarTicket } from "./ticket";
 
 const money = (n) => "$" + Math.round(Number(n) || 0).toLocaleString("es-AR");
 
@@ -13,10 +14,16 @@ export default function VistaPago({ obtener, fijo }) {
   const [cobro, setCobro] = useState(undefined); // undefined = cargando
   const [tema, setTema] = useState(null);
   const [copiado, setCopiado] = useState(false);
+  const tokenCobro = useRef(""); // lo recibe la página mientras el cobro está pendiente (para el ticket)
+  const [bajandoTicket, setBajandoTicket] = useState(false);
+  const [errorTicket, setErrorTicket] = useState("");
+  const [direccion, setDireccion] = useState("");
 
   async function cargar() {
     try {
       const d = await obtener();
+      if (d && d.token) tokenCobro.current = d.token;
+      if (!d) tokenCobro.current = "";
       setCobro(d || null);
     } catch (e) {
       setCobro((c) => (c === undefined ? null : c));
@@ -95,11 +102,35 @@ export default function VistaPago({ obtener, fijo }) {
         )}
 
         {cobro && estado === "pagado" && (
-          <div className="bg-white rounded-2xl border border-[var(--borde)] p-6 text-center mt-4">
-            <p className="text-5xl mb-2 text-[var(--verde)]">✓</p>
-            <p className="font-semibold text-lg text-[var(--verde)]">¡Pago recibido!</p>
-            <p className="text-sm text-[var(--tinta-suave)] mt-2">Gracias por elegirnos.</p>
-          </div>
+          <>
+            <div className="bg-white rounded-2xl border border-[var(--borde)] p-6 text-center mt-4">
+              <p className="text-5xl mb-2 text-[var(--verde)]">✓</p>
+              <p className="font-semibold text-lg text-[var(--verde)]">¡Pago recibido!</p>
+              <p className="text-sm text-[var(--tinta-suave)] mt-2">Gracias por elegirnos.</p>
+            </div>
+            {tokenCobro.current && (
+              <div className="mt-3">
+                <button
+                  onClick={async () => {
+                    setBajandoTicket(true);
+                    setErrorTicket("");
+                    try {
+                      await descargarTicket(tokenCobro.current, direccion);
+                    } catch (e) {
+                      setErrorTicket(e.message || "No se pudo descargar el ticket.");
+                    }
+                    setBajandoTicket(false);
+                  }}
+                  disabled={!cobro.ticket_listo || bajandoTicket}
+                  className="w-full h-14 rounded-2xl bg-[var(--verde)] text-white text-base font-bold disabled:opacity-60"
+                >
+                  {bajandoTicket ? "Preparando…" : cobro.ticket_listo ? "⬇ DESCARGAR TICKET DE COMPRA" : "Preparando tu ticket…"}
+                </button>
+                {errorTicket && <p className="text-xs text-center text-red-600 mt-1.5">{errorTicket}</p>}
+              </div>
+            )}
+            <Multilink saludo={false} alCargar={(l) => setDireccion(l.direccion || "")} />
+          </>
         )}
 
         {cobro && (estado === "cancelado" || estado === "vencido") && (
