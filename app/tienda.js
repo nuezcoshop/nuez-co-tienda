@@ -1104,7 +1104,7 @@ function Tarjeta({ item, carrito, abrir, variante = 0 }) {
           <span className="absolute top-2 left-2 text-xs font-extrabold bg-[var(--verde)] text-[var(--fondo)] px-3 py-1 rounded-full">{etiqueta}</span>
         )}
         {!etiqueta && item.pct_online > 0 && item.hayStock && (
-          <span className="absolute top-2 left-2 text-xs font-extrabold bg-[var(--verde)] text-[var(--fondo)] px-3 py-1 rounded-full">{item.pct_online}% OFF</span>
+          <span className="absolute top-2 left-2 text-xs font-extrabold bg-[var(--verde)] text-[var(--fondo)] px-3 py-1 rounded-full">{item.en_promo ? `PROMO ${item.pct_online}% OFF` : `${item.pct_online}% OFF`}</span>
         )}
         {!item.hayStock && <span className={`absolute ${abajo} left-2 text-[11px] font-semibold bg-[var(--tinta)] text-white px-2 py-1 rounded-full`}>Agotado</span>}
         {item.hayStock && promoNxM(item) && (
@@ -1443,7 +1443,9 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
           </p>
           {opcion.precio_lista > 0 && (
             <p className="text-sm font-bold text-[var(--verde)] mt-1">
-              ✓ Precio online: {opcion.pct_online}% menos que en el local ({money(opcion.precio_lista)}{esPeso ? " /kg" : ""})
+              {opcion.en_promo
+                ? `🔥 PROMO${opcion.promo_hasta ? " hasta el " + new Date(opcion.promo_hasta).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", timeZone: "America/Argentina/Cordoba" }) : ""} · Antes ${money(opcion.precio_lista)}${esPeso ? " /kg" : ""} (${opcion.pct_online}% menos)`
+                : `✓ Precio online: ${opcion.pct_online}% menos que en el local (${money(opcion.precio_lista)}${esPeso ? " /kg" : ""})`}
             </p>
           )}
           {promo && (
