@@ -2,23 +2,31 @@
 
 import { useEffect, useState } from "react";
 
-// Pop up de bienvenida: aparece a los 6 segundos y se vuelve a mostrar en la próxima visita.
+// Pop up de bienvenida: aparece a los 6 segundos y NO vuelve a aparecer durante 12 horas en ese celular/compu
+// (aunque se abra el link en otra pestaña o se siga navegando). Si se cambia el pop up en el POS, se muestra de nuevo.
+const HORAS_SIN_REPETIR = 12;
+
 export default function Popup({ titulo, boton, link, letraChica }) {
   const [visible, setVisible] = useState(false);
+  const clave = "nuez_popup_" + [titulo, boton, link, letraChica].join("|").split("").reduce((h, c) => ((h << 5) - h + c.charCodeAt(0)) | 0, 0);
 
   useEffect(() => {
     try {
-      if (sessionStorage.getItem("nuez_popup_visto")) return;
+      const antes = Number(localStorage.getItem(clave));
+      if (antes && Date.now() - antes < HORAS_SIN_REPETIR * 3600 * 1000) return;
     } catch (e) {}
-    const t = setTimeout(() => setVisible(true), 6000);
+    const t = setTimeout(() => {
+      setVisible(true);
+      // Se marca como visto apenas aparece: así una pestaña nueva o volver atrás no lo repite.
+      try {
+        localStorage.setItem(clave, String(Date.now()));
+      } catch (e) {}
+    }, 6000);
     return () => clearTimeout(t);
-  }, []);
+  }, [clave]);
 
   function cerrar() {
     setVisible(false);
-    try {
-      sessionStorage.setItem("nuez_popup_visto", "1");
-    } catch (e) {}
   }
 
   if (!visible) return null;
