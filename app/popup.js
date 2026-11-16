@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 
-// Pop up de bienvenida: aparece a los 6 segundos y NO vuelve a aparecer durante 1 hora en ese celular/compu
+// Pop up de bienvenida: aparece a los 6 segundos y NO vuelve a aparecer durante 24 horas en ese celular/compu
 // (aunque se abra el link en otra pestaña o se siga navegando). Si se cambia el pop up en el POS, se muestra de nuevo.
-const HORAS_SIN_REPETIR = 1;
+const HORAS_SIN_REPETIR = 24;
 
 export default function Popup({ titulo, boton, link, letraChica }) {
   const [visible, setVisible] = useState(false);
