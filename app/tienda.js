@@ -1365,23 +1365,10 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
         </div>
 
         <div className="p-5 pb-3 overflow-y-auto min-h-0 flex-1">
-          {(() => {
-            // Título largo = prioridad: ocupa todo el ancho y la categoría baja debajo.
-            // Título corto y categoría corta: la categoría queda a la derecha, partida en renglones si hace falta.
-            const largo = (item.nombre || "").length > 22 || (item.categoria || "").length > 14;
-            const cat = item.categoria ? <p className={`text-xs font-medium text-[var(--tinta-suave)] uppercase tracking-wide ${largo ? "mt-1" : "shrink-0 max-w-[38%] text-right pt-1.5"}`}>{item.categoria}</p> : null;
-            return largo ? (
-              <div>
-                <h2 className="text-xl font-bold leading-snug">{item.nombre}</h2>
-                {cat}
-              </div>
-            ) : (
-              <div className="flex items-start justify-between gap-3">
-                <h2 className="text-xl font-bold leading-snug flex-1 min-w-0">{item.nombre}</h2>
-                {cat}
-              </div>
-            );
-          })()}
+          {opcion.en_promo && (
+            <span className="inline-block text-[11px] font-semibold bg-[var(--amarillo)] text-[var(--tinta)] px-3 py-1 rounded-full mb-2">Beneficio especial</span>
+          )}
+          <h2 className="t-titulo text-2xl font-light leading-snug" style={{ fontWeight: 300 }}>{item.nombre}</h2>
           {(() => {
             const texto = item.descripcion || (opciones.find((o) => o.descripcion) || {}).descripcion;
             if (!texto) return null;
@@ -1445,20 +1432,30 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
             </div>
           )}
 
-          <p className="text-2xl font-extrabold text-[var(--verde)] mt-4">
-            {mostrar(precio)}
-            <span className="text-sm font-semibold text-[var(--tinta-suave)]">{unidadPrecio}</span>
-            {opcion.precio_lista > 0 && Math.abs(precio - opcion.precio_venta) < 1e-6 && (
-              <span className="ml-2 text-base font-medium line-through opacity-60">{mostrar(precio * (opcion.precio_lista / opcion.precio_venta))}</span>
-            )}
-          </p>
-          {opcion.precio_lista > 0 && (
-            <p className="text-sm font-bold text-[var(--verde)] mt-1">
-              {opcion.en_promo
-                ? `Beneficio especial${opcion.promo_hasta ? " hasta el " + new Date(opcion.promo_hasta).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", timeZone: "America/Argentina/Cordoba" }) : ""} · Antes ${money(opcion.precio_lista)}${esPeso ? " /kg" : ""}`
-                : `✓ Precio online: ${opcion.pct_online}% menos que en el local (${money(opcion.precio_lista)}${esPeso ? " /kg" : ""})`}
-            </p>
-          )}
+          {(() => {
+            const conLista = opcion.precio_lista > 0 && Math.abs(precio - opcion.precio_venta) < 1e-6;
+            return (
+              <>
+                <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-4">
+                  <p className="text-3xl font-extrabold text-[var(--verde)]">
+                    {mostrar(precio)}
+                    <span className="text-sm font-semibold text-[var(--tinta-suave)]">{unidadPrecio}</span>
+                  </p>
+                  {conLista && (
+                    <span className="text-lg font-medium line-through opacity-60">{mostrar(precio * (opcion.precio_lista / opcion.precio_venta))}</span>
+                  )}
+                  {conLista && opcion.pct_online > 0 && (
+                    <span className="rounded-full bg-[#d7472f] text-white text-sm font-extrabold px-3 py-1">{opcion.pct_online}%</span>
+                  )}
+                </div>
+                {opcion.en_promo && opcion.promo_hasta && (
+                  <p className="text-xs text-[var(--tinta-suave)] mt-1">
+                    Válido hasta {new Date(opcion.promo_hasta).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", timeZone: "America/Argentina/Cordoba" })}
+                  </p>
+                )}
+              </>
+            );
+          })()}
           {promo && (
             <p className="text-sm font-bold text-[var(--verde)] mt-1">
               Promo {promo.texto}: llevando {promo.lleva} pagás {promo.paga}
@@ -1472,10 +1469,12 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
           )}
 
           <div className="mt-4">
-            <p className="text-sm font-semibold mb-2">
-              {esPeso ? "¿Cuánto te preparamos?" : "Cantidad"}
-              {esPeso && paso > PASO_KG + 1e-9 && <span className="font-normal text-[var(--tinta-suave)]"> · {textoPaso(paso)}</span>}
-            </p>
+            {esPeso && (
+              <p className="text-sm font-semibold mb-2">
+                ¿Cuánto te preparamos?
+                {paso > PASO_KG + 1e-9 && <span className="font-normal text-[var(--tinta-suave)]"> · {textoPaso(paso)}</span>}
+              </p>
+            )}
             <Contador
               etiqueta={esPeso ? formatoCantidad(cant, "kg") : String(cant)}
               onMenos={() => setCant((c) => Math.max(redondear(c - paso), paso))}
@@ -1542,7 +1541,10 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
             disabled={max <= 0}
             className="btn-tienda w-full h-14 rounded-2xl bg-[var(--acento)] hover:brightness-95 text-[var(--sobre-acento)] font-bold flex items-center justify-between px-5 active:scale-[0.99] disabled:opacity-50"
           >
-            <span>Agregar al carrito</span>
+            <span className="flex items-center gap-2">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.5" /><circle cx="18" cy="20" r="1.5" /><path d="M2 3h3l2.7 12.4a1 1 0 0 0 1 .8h8.9a1 1 0 0 0 1-.8L20 7H6" /></svg>
+              Agregar al carrito
+            </span>
             <span>{money(subtotal)}</span>
           </button>
         </div>
