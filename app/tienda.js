@@ -1122,12 +1122,17 @@ function Tarjeta({ item, carrito, abrir, variante = 0 }) {
       </div>
       <div className="info-tarjeta px-1 flex flex-col gap-1 flex-1 text-[var(--verde)]">
         <div className="min-h-[2.5rem] flex items-end">
-          <p className={`t-titulo text-[15px] ${item.en_promo ? "font-light" : "font-extrabold"} leading-snug line-clamp-2`}>{item.nombre}</p>
+          <p className={`t-titulo text-[15px] ${item.en_promo ? "font-light" : "font-extrabold"} leading-snug line-clamp-2`} style={item.en_promo ? { fontWeight: 300 } : undefined}>{item.nombre}</p>
         </div>
         <div className="flex items-center justify-between">
           <p className="precio-tarjeta min-w-0 whitespace-nowrap text-[15px] font-extrabold">
-            {precioTexto}
-            {listaTarjeta && (item.en_promo
+            {item.en_promo && item.pct_online > 0 ? (
+              <span className="inline-flex items-start gap-2 align-top">
+                <span>{precioTexto}{listaTarjeta && <span className="block text-[12px] font-medium line-through opacity-60 leading-tight">{listaTarjeta}</span>}</span>
+                <span className="mt-0.5 rounded-lg bg-[#ff5a4d] text-white text-[12px] font-extrabold px-2 py-0.5">{item.pct_online}%</span>
+              </span>
+            ) : precioTexto}
+            {!(item.en_promo && item.pct_online > 0) && listaTarjeta && (item.en_promo
               ? <span className="block text-[12px] font-medium line-through opacity-60 leading-tight">{listaTarjeta}</span>
               : <span className="ml-1.5 text-[12px] font-medium line-through opacity-60">{listaTarjeta}</span>)}
             {combo.ahorro > 0 && <span className="ml-1.5 text-[12px] font-medium line-through opacity-60">{money(combo.separado)}</span>}
