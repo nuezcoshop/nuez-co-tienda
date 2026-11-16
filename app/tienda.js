@@ -1104,7 +1104,7 @@ function Tarjeta({ item, carrito, abrir, variante = 0 }) {
           <span className="absolute top-2 left-2 text-xs font-extrabold bg-[var(--verde)] text-[var(--fondo)] px-3 py-1 rounded-full">{etiqueta}</span>
         )}
         {!etiqueta && item.pct_online > 0 && item.hayStock && (
-          <span className="absolute top-2 left-2 text-xs font-extrabold bg-[var(--verde)] text-[var(--fondo)] px-3 py-1 rounded-full">{item.en_promo ? `PROMO ${item.pct_online}% OFF` : `${item.pct_online}% OFF`}</span>
+          <span className="absolute top-2 left-2 text-xs font-extrabold bg-[var(--verde)] text-[var(--fondo)] px-3 py-1 rounded-full">{item.en_promo ? "Beneficio especial" : `${item.pct_online}% OFF`}</span>
         )}
         {!item.hayStock && <span className={`absolute ${abajo} left-2 text-[11px] font-semibold bg-[var(--tinta)] text-white px-2 py-1 rounded-full`}>Agotado</span>}
         {item.hayStock && promoNxM(item) && (
@@ -1122,12 +1122,14 @@ function Tarjeta({ item, carrito, abrir, variante = 0 }) {
       </div>
       <div className="info-tarjeta px-1 flex flex-col gap-1 flex-1 text-[var(--verde)]">
         <div className="min-h-[2.5rem] flex items-end">
-          <p className="t-titulo text-[15px] font-extrabold leading-snug line-clamp-2">{item.nombre}</p>
+          <p className={`t-titulo text-[15px] ${item.en_promo ? "font-light" : "font-extrabold"} leading-snug line-clamp-2`}>{item.nombre}</p>
         </div>
         <div className="flex items-center justify-between">
           <p className="precio-tarjeta min-w-0 whitespace-nowrap text-[15px] font-extrabold">
             {precioTexto}
-            {listaTarjeta && <span className="ml-1.5 text-[12px] font-medium line-through opacity-60">{listaTarjeta}</span>}
+            {listaTarjeta && (item.en_promo
+              ? <span className="block text-[12px] font-medium line-through opacity-60 leading-tight">{listaTarjeta}</span>
+              : <span className="ml-1.5 text-[12px] font-medium line-through opacity-60">{listaTarjeta}</span>)}
             {combo.ahorro > 0 && <span className="ml-1.5 text-[12px] font-medium line-through opacity-60">{money(combo.separado)}</span>}
             {precioSufijo && <span className="ml-1 text-[12px] font-medium opacity-80">{precioSufijo}</span>}
           </p>
@@ -1444,7 +1446,7 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
           {opcion.precio_lista > 0 && (
             <p className="text-sm font-bold text-[var(--verde)] mt-1">
               {opcion.en_promo
-                ? `🔥 PROMO${opcion.promo_hasta ? " hasta el " + new Date(opcion.promo_hasta).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", timeZone: "America/Argentina/Cordoba" }) : ""} · Antes ${money(opcion.precio_lista)}${esPeso ? " /kg" : ""} (${opcion.pct_online}% menos)`
+                ? `Beneficio especial${opcion.promo_hasta ? " hasta el " + new Date(opcion.promo_hasta).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", timeZone: "America/Argentina/Cordoba" }) : ""} · Antes ${money(opcion.precio_lista)}${esPeso ? " /kg" : ""}`
                 : `✓ Precio online: ${opcion.pct_online}% menos que en el local (${money(opcion.precio_lista)}${esPeso ? " /kg" : ""})`}
             </p>
           )}
