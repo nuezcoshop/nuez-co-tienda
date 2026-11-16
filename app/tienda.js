@@ -2,6 +2,7 @@
 
 import Escalera from "./escalera";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { CONDICIONES } from "@/lib/condiciones";
 import { estadoEscalones, textoBeneficio } from "./escalones";
 import dynamic from "next/dynamic";
 import { createPortal } from "react-dom";
@@ -102,6 +103,7 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
   const [listo, setListo] = useState(false);
   const [busqueda, setBusqueda] = useState("");
   const [categoria, setCategoria] = useState("");
+  const [condicionesSel, setCondicionesSel] = useState([]); // filtros rápidos: sin gluten, vegano, sin azúcar
   const [carritoAbierto, setCarritoAbierto] = useState(false);
   const [detalle, setDetalle] = useState(null); // producto abierto
   const [aviso, setAviso] = useState("");
@@ -318,11 +320,14 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
     return [...set].sort(compararCategorias);
   }, [items, config.categoriasOrden]);
 
+  const condicionesDisponibles = CONDICIONES.filter((c) => items.some((i) => (i.condiciones || []).includes(c.id)));
+
   const q = normalizarTexto(busqueda).trim();
   const palabras = q ? q.split(/\s+/) : [];
   const visibles = items
     .filter((i) => {
       if (categoria && categoria !== TODOS && i.categoria !== categoria) return false;
+      if (condicionesSel.length > 0 && !condicionesSel.every((c) => (i.condiciones || []).includes(c))) return false;
       if (palabras.length === 0) return true;
       const texto = normalizarTexto(i.nombre + " " + (i.categoria || ""));
       return palabras.every((w) => texto.includes(w));
@@ -639,6 +644,31 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
             ))}
           </FilaCategorias>
         )}
+        {!esInicio && condicionesDisponibles.length > 0 && (
+          <div className="flex items-center gap-2 flex-wrap mt-1 mb-1">
+            <span className="text-xs font-semibold text-[var(--tinta-suave)] mr-1">Filtrar:</span>
+            {condicionesDisponibles.map((c) => {
+              const activo = condicionesSel.includes(c.id);
+              return (
+                <button
+                  key={c.id}
+                  onClick={() => setCondicionesSel((prev) => (prev.includes(c.id) ? prev.filter((x) => x !== c.id) : [...prev, c.id]))}
+                  className={`chip-tienda h-9 pl-2.5 pr-4 rounded-full border-2 border-[var(--verde)] text-[13px] font-semibold flex items-center gap-1.5 transition-colors ${
+                    activo ? "bg-[var(--verde)] text-[var(--fondo)]" : "bg-transparent text-[var(--verde)]"
+                  }`}
+                  aria-pressed={activo}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={c.logo} alt="" className={`h-5 w-5 object-contain rounded-full ${activo ? "bg-white" : ""}`} />
+                  {c.nombre}
+                </button>
+              );
+            })}
+            {condicionesSel.length > 0 && (
+              <button onClick={() => setCondicionesSel([])} className="text-xs underline text-[var(--tinta-suave)] ml-1">Quitar filtros</button>
+            )}
+          </div>
+        )}
 
 
         {ordenInicio.filter((b) => !ocultos.includes(b)).map((b) => (
@@ -811,6 +841,20 @@ function Nosotros({ datos }) {
 }
 
 // Fila de categorías que se desliza de costado. En computadora suma flechas ‹ › (con el mouse no se puede deslizar).
+// Logos de las condiciones del producto (sin gluten, vegano, sin azúcar) flotando abajo a la izquierda de la foto.
+function LogosCondiciones({ condiciones, grande }) {
+  const lista = CONDICIONES.filter((c) => (condiciones || []).includes(c.id));
+  if (lista.length === 0) return null;
+  return (
+    <div className={`absolute left-2 bottom-2 flex gap-1.5 pointer-events-none ${grande ? "left-4 bottom-3" : ""}`}>
+      {lista.map((c) => (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img key={c.id} src={c.logo} alt={c.nombre} title={c.nombre} className={`${grande ? "h-10" : "h-8"} w-auto opacity-90 drop-shadow`} />
+      ))}
+    </div>
+  );
+}
+
 function FilaCategorias({ children }) {
   const fila = useRef(null);
   const [puedeIzq, setPuedeIzq] = useState(false);
@@ -1100,6 +1144,7 @@ function Tarjeta({ item, carrito, abrir, variante = 0 }) {
         ) : (
           <div className="w-full h-full flex items-center justify-center text-4xl">🌰</div>
         )}
+        <LogosCondiciones condiciones={item.condiciones} />
         {etiqueta && (
           <span className="absolute top-2 left-2 text-xs font-extrabold bg-[var(--verde)] text-[var(--fondo)] px-3 py-1 rounded-full">{etiqueta}</span>
         )}
@@ -1359,6 +1404,7 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
           ) : (
             <div className="w-full h-full flex items-center justify-center text-6xl">🌰</div>
           )}
+          <LogosCondiciones condiciones={[...(item.condiciones || []), ...(opcion.condiciones || [])]} grande />
           <button onClick={cerrar} className="absolute top-4 right-3 w-10 h-10 rounded-full bg-white/90 text-lg shadow" aria-label="Cerrar">
             ✕
           </button>
@@ -1369,6 +1415,21 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
             <span className="inline-block text-[11px] font-semibold bg-[var(--amarillo)] text-[var(--tinta)] px-3 py-1 rounded-full mb-2">Beneficio especial</span>
           )}
           <h2 className="t-titulo text-2xl font-light leading-snug" style={{ fontWeight: 300 }}>{item.nombre}</h2>
+          {(() => {
+            const cs = CONDICIONES.filter((c) => [...(item.condiciones || []), ...(opcion.condiciones || [])].includes(c.id));
+            if (cs.length === 0) return null;
+            return (
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {cs.map((c) => (
+                  <span key={c.id} className="text-[11px] font-semibold rounded-full bg-[var(--verde-claro)] text-[var(--verde)] pl-1.5 pr-3 py-1 flex items-center gap-1.5">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={c.logo} alt="" className="h-4 w-4 object-contain" />
+                    {c.detalle.split(" (")[0]}
+                  </span>
+                ))}
+              </div>
+            );
+          })()}
           {(() => {
             const texto = item.descripcion || (opciones.find((o) => o.descripcion) || {}).descripcion;
             if (!texto) return null;
