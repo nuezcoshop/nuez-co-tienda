@@ -840,20 +840,11 @@ function Nosotros({ datos }) {
 function LogosCondiciones({ condiciones, grande }) {
   const lista = CONDICIONES.filter((c) => (condiciones || []).includes(c.id));
   if (lista.length === 0) return null;
-  if (grande) {
-    return (
-      <div className="absolute flex items-end gap-1.5 pointer-events-none left-4 bottom-3">
-        {lista.map((c) =>
-          c.logo ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img key={c.id} src={c.logo} alt={c.nombre} title={c.nombre} style={{ height: 46 * c.alto }} className="w-auto opacity-90" />
-          ) : null
-        )}
-      </div>
-    );
-  }
   return (
-    <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 pointer-events-none" style={{ opacity: 0.6, color: "var(--verde)" }}>
+    <div
+      className={`absolute flex items-center gap-2 pointer-events-none ${grande ? "left-4 bottom-3" : "inset-x-0 bottom-0 justify-center"}`}
+      style={{ opacity: 0.6, color: "var(--verde)" }}
+    >
       {lista.map((c) =>
         c.mascara ? (
           <span
@@ -863,8 +854,8 @@ function LogosCondiciones({ condiciones, grande }) {
             title={c.nombre}
             style={{
               display: "inline-block",
-              height: 24 * c.alto,
-              width: 24 * c.alto,
+              height: (grande ? 46 : 24) * c.alto,
+              width: (grande ? 46 : 24) * c.alto,
               backgroundColor: "currentColor",
               WebkitMaskImage: `url(${c.mascara})`,
               maskImage: `url(${c.mascara})`,
@@ -876,7 +867,7 @@ function LogosCondiciones({ condiciones, grande }) {
               maskPosition: "center",
             }}
           />
-        ) : (
+        ) : grande ? null : (
           <span key={c.id} className="text-[8px] font-semibold uppercase tracking-wide leading-[1.1] max-w-[58px]">
             {c.nombre}
           </span>
