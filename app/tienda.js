@@ -645,15 +645,14 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
           </FilaCategorias>
         )}
         {!esInicio && condicionesDisponibles.length > 0 && (
-          <div className="flex items-center gap-2 flex-wrap mt-1 mb-1">
-            <span className="text-xs font-semibold text-[var(--tinta-suave)] mr-1">Filtrar:</span>
+          <div className="flex items-center gap-1.5 flex-nowrap overflow-x-auto mt-1 mb-1" style={{ scrollbarWidth: "none" }}>
             {condicionesDisponibles.map((c) => {
               const activo = condicionesSel.includes(c.id);
               return (
                 <button
                   key={c.id}
                   onClick={() => setCondicionesSel((prev) => (prev.includes(c.id) ? prev.filter((x) => x !== c.id) : [...prev, c.id]))}
-                  className={`chip-tienda h-9 pl-3 pr-4 rounded-full border-2 border-[var(--verde)] text-[13px] font-semibold flex items-center gap-1.5 transition-colors ${
+                  className={`chip-tienda shrink-0 h-9 px-3 rounded-full border-2 border-[var(--verde)] text-[12px] font-semibold whitespace-nowrap transition-colors ${
                     activo ? "bg-[var(--verde)] text-[var(--fondo)]" : "bg-transparent text-[var(--verde)]"
                   }`}
                   aria-pressed={activo}
@@ -662,9 +661,6 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
                 </button>
               );
             })}
-            {condicionesSel.length > 0 && (
-              <button onClick={() => setCondicionesSel([])} className="text-xs underline text-[var(--tinta-suave)] ml-1">Quitar filtros</button>
-            )}
           </div>
         )}
 
@@ -839,19 +835,49 @@ function Nosotros({ datos }) {
 }
 
 // Fila de categorías que se desliza de costado. En computadora suma flechas ‹ › (con el mouse no se puede deslizar).
-// Condiciones del producto: logos chicos (sin gluten, vegano) y texto (sin azúcar agregado) abajo a la izquierda de la foto.
+// Condiciones del producto. En la tarjeta: íconos sutiles (color de la tienda, medio transparentes) centrados abajo de la foto.
+// En la ficha del producto: logos más grandes abajo a la izquierda de la foto.
 function LogosCondiciones({ condiciones, grande }) {
   const lista = CONDICIONES.filter((c) => (condiciones || []).includes(c.id));
   if (lista.length === 0) return null;
-  const base = grande ? 46 : 26;
+  if (grande) {
+    return (
+      <div className="absolute flex items-end gap-1.5 pointer-events-none left-4 bottom-3">
+        {lista.map((c) =>
+          c.logo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={c.id} src={c.logo} alt={c.nombre} title={c.nombre} style={{ height: 46 * c.alto }} className="w-auto opacity-90" />
+          ) : null
+        )}
+      </div>
+    );
+  }
   return (
-    <div className={`absolute flex items-end gap-1.5 pointer-events-none ${grande ? "left-4 bottom-3" : "left-2 bottom-2"}`}>
+    <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 pointer-events-none" style={{ opacity: 0.6, color: "var(--verde)" }}>
       {lista.map((c) =>
-        c.logo ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img key={c.id} src={c.logo} alt={c.nombre} title={c.nombre} style={{ height: base * c.alto }} className="w-auto opacity-90" />
-        ) : grande ? null : (
-          <span key={c.id} className={`font-semibold uppercase tracking-wide leading-none rounded-full bg-[var(--fondo)]/85 text-[var(--tinta)] ${grande ? "text-[10px] px-2 py-1" : "text-[8px] px-1.5 py-1"}`}>
+        c.mascara ? (
+          <span
+            key={c.id}
+            role="img"
+            aria-label={c.nombre}
+            title={c.nombre}
+            style={{
+              display: "inline-block",
+              height: 24 * c.alto,
+              width: 24 * c.alto,
+              backgroundColor: "currentColor",
+              WebkitMaskImage: `url(${c.mascara})`,
+              maskImage: `url(${c.mascara})`,
+              WebkitMaskRepeat: "no-repeat",
+              maskRepeat: "no-repeat",
+              WebkitMaskSize: "contain",
+              maskSize: "contain",
+              WebkitMaskPosition: "center",
+              maskPosition: "center",
+            }}
+          />
+        ) : (
+          <span key={c.id} className="text-[8px] font-semibold uppercase tracking-wide leading-[1.1] max-w-[58px]">
             {c.nombre}
           </span>
         )
