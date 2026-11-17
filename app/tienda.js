@@ -658,10 +658,6 @@ export default function Tienda({ productos, banners, destacados = [], config, fo
                   }`}
                   aria-pressed={activo}
                 >
-                  {c.logo && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={c.logo} alt="" className={`h-4 w-4 object-contain rounded-full ${activo ? "bg-white" : ""}`} />
-                  )}
                   {c.nombre}
                 </button>
               );
@@ -847,14 +843,14 @@ function Nosotros({ datos }) {
 function LogosCondiciones({ condiciones, grande }) {
   const lista = CONDICIONES.filter((c) => (condiciones || []).includes(c.id));
   if (lista.length === 0) return null;
-  const base = grande ? 28 : 22;
+  const base = grande ? 46 : 26;
   return (
     <div className={`absolute flex items-end gap-1.5 pointer-events-none ${grande ? "left-4 bottom-3" : "left-2 bottom-2"}`}>
       {lista.map((c) =>
         c.logo ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img key={c.id} src={c.logo} alt={c.nombre} title={c.nombre} style={{ height: base * c.alto }} className="w-auto opacity-90" />
-        ) : (
+        ) : grande ? null : (
           <span key={c.id} className={`font-semibold uppercase tracking-wide leading-none rounded-full bg-[var(--fondo)]/85 text-[var(--tinta)] ${grande ? "text-[10px] px-2 py-1" : "text-[8px] px-1.5 py-1"}`}>
             {c.nombre}
           </span>
@@ -1431,10 +1427,6 @@ function Detalle({ item, porId, carrito, cerrar, onAgregar }) {
               <div className="flex flex-wrap gap-1.5 mt-2">
                 {cs.map((c) => (
                   <span key={c.id} className="text-[11px] font-semibold rounded-full bg-[var(--verde-claro)] text-[var(--verde)] px-3 py-1 flex items-center gap-1.5">
-                    {c.logo && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={c.logo} alt="" className="h-4 w-4 object-contain" />
-                    )}
                     {c.nombre}
                   </span>
                 ))}
