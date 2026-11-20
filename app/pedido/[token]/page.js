@@ -1,8 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { supabase } from "@/lib/supabase";
 import { coloresDesde } from "@/lib/colores";
+
+// El mapa en vivo se carga solo cuando hace falta.
+const RepartoVivo = dynamic(() => import("./reparto-vivo"), { ssr: false });
 
 const money = (n) => "$" + Math.round(Number(n) || 0).toLocaleString("es-AR");
 
@@ -110,6 +114,8 @@ export default function Seguimiento({ params }) {
                 </ol>
               )}
             </div>
+
+            {envio && estado === "preparado" && <RepartoVivo token={token} />}
 
             {pedido.modificado && estado !== "cancelado" && (
               <div className="mt-4 rounded-2xl border border-amber-300 bg-amber-50 text-amber-900 p-4 text-sm">
